@@ -11122,15 +11122,15 @@ Try {
                     $CurrentPolicy=$Global:XDPPolicy
                 }else{
                     # add code here to convert snapmirror async to sync
-                    Write-Log "Switch from any Policy to another"
+                    Write-LogDebug "Switch from any Policy to another"
                     if($relation.Policy -notin $("Sync","StrictSync")){
-                        Write-Log "From Async to Sync"
+                        Write-LogDebug "From Async to Sync"
                         $ConvertType="Async2Sync"
                     }elseif($relation.Policy -in ("Sync","StrictSync") -and $Global:XDPPolicy -in ("Sync","StrictSync")){
-                        Write-Log "From Sync to Sync"
+                        Write-LogDebug "From Sync to Sync"
                         $ConvertType="Sync2Sync"
                     }else{
-                        Write-Log "From Sync to Async"
+                        Write-LogDebug "From Sync to Async"
                         $ConvertType="Sync2Async"
                     }
                     Write-LogDebug "Invoke-NcSnapmirrorQuiesce -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol `
