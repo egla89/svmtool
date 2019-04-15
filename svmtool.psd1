@@ -6,22 +6,35 @@
 # Generated on: 2018-10-09
 #
 # Updated by : Olivier Masson
+<<<<<<< HEAD
 # Updated on : 2019-04-17
+=======
+# Updated on : 2019-04-13
+>>>>>>> Working with Sync or StrictSync SM-S relationship
 #
 # Version Control :
 #   1.0.0 : Initial version
 #   1.0.1 : Add DefaultLDAPCredentials
 #   1.0.2 : Add XDPPolicy, MirrorSchedule, NoSnapmirrorUpdate, NoSnapmirrorWait
 #   1.0.3 : Fix update of XDPPolicy during ConfigureDR or UpdateDR
+<<<<<<< HEAD
 #   1.0.4 : Add custom AD OU & tmp cifs lif vlan to join in AD
 #   1.0.5 : Fix check if CIFS server is running
+=======
+#   1.0.4 : add XDPPolicy argument for ResyncReverse and UpdateReverse
+>>>>>>> Working with Sync or StrictSync SM-S relationship
 @{
 
     # Script module or binary module file associated with this manifest.
     RootModule        = '.\svmtool.psm1'
 
+<<<<<<< HEAD
     # Version number of this module.
     ModuleVersion     = '1.0.5'
+=======
+# Version number of this module.
+ModuleVersion = '1.0.4'
+>>>>>>> Working with Sync or StrictSync SM-S relationship
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
