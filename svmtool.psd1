@@ -7,6 +7,9 @@
 #
 # Updated by : Olivier Masson
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a40ed38101ff4bf96b3d7c476c1741f84e9fbb0c
 # Updated on : 2019-04-17
 =======
 # Updated on : 2019-04-13
