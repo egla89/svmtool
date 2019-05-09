@@ -88,6 +88,14 @@ In order to perform a restore operation a minimal config must exist on the desti
 - Data aggregates recreated
 - Low Level Network configuration done : IFGRP, IPSPACE, SUBNET, BROADCAST-DOMAIN already created
 
+### RestoreObject Purpose
+Allow to restore only part of SVM configuration to original SVM or to different SVM on same or different Cluster
+Currently compatible with following Objects:
+- LIFs
+- Volumes
+- Exports (NFS rules)
+- Shares (CIFS shares)
+
 ### Documentation
 For more information download [Manual](https://github.com/oliviermasson/svmtool/blob/master/SVMTOOL_Manual_v1.1.docx)
 

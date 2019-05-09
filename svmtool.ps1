@@ -105,7 +105,7 @@
                         If not specified, restore to source SVM
     -Object : List of available object for restore operation
               Lif, Volumes, Exports, Shares, Quotas
-    [-SelectBackupDate] : Ask script to display all dates availables and prompt user to choose a date to restore. 
+    [-SelectBackupDate] : Ask script to display all dates available and prompt user to choose a date to restore. 
                           By default select last data available in backup folder
     [-RW] : When restoring volumes, chose to restore them as Read/Write volumes
             By default will restore as DP volumes
