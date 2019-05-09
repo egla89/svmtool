@@ -90,6 +90,7 @@ In order to perform a restore operation a minimal config must exist on the desti
 
 ### RestoreObject Purpose
 Allow to restore only part of SVM configuration to original SVM or to different SVM on same or different Cluster
+
 Currently compatible with following Objects:
 - LIFs
 - Volumes
