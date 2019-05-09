@@ -5,8 +5,8 @@
 #
 # Generated on: 2018-10-09
 #
-# Updated by : Olivier Masson
-# Updated on : 2019-04-17
+# Updated by : Mirko Van Colen
+# Updated on : 2019-05-07
 #
 # Version Control :
 #   1.0.0 : Initial version
@@ -15,13 +15,14 @@
 #   1.0.3 : Fix update of XDPPolicy during ConfigureDR or UpdateDR
 #   1.0.4 : Add custom AD OU & tmp cifs lif vlan to join in AD
 #   1.0.5 : Fix check if CIFS server is running
+#   1.0.6 : Added skipVscanFpolicy
 @{
 
     # Script module or binary module file associated with this manifest.
     RootModule        = '.\svmtool.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '1.0.5'
+    ModuleVersion     = '1.0.6'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()

@@ -438,7 +438,8 @@
         - 0.2.5 :   Fix gateway creation
                     Add support for Data replication with Sync and StrictSync Policy
                     Automatic conversion of Async to Sync relationships and vice versa
-                    Introduce RestoreObject to allow restores only part of SVM configuration: LIFs, Volumes, Exports, Shares, Quotas, Users (still is progress) 
+                    Introduce RestoreObject to allow restores only part of SVM configuration: LIFs, Volumes, Exports, Shares, Quotas, Users (still is progress)
+        - 0.2.6 :   Add option to skip anti virus check completely, bugfixes (acl encoding, export policy, ...) 
 #>
 [CmdletBinding(HelpURI = "https://github.com/oliviermasson/svmtool", DefaultParameterSetName = "ListInstance")]
 Param (
@@ -691,6 +692,11 @@ Param (
     [Parameter(Mandatory = $false, ParameterSetName = 'UpdateReverse')]
     [switch]$ForceDeleteQuota,
 
+    [Parameter(Mandatory = $false, ParameterSetName = 'CloneDR')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'UpdateDR')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'UpdateReverse')]
+    [switch]$SkipVscanFpolicy,   
+
     [Parameter(Mandatory = $false, ParameterSetName = 'CleanReverse')]
     [switch]$ForceClean,
 
@@ -925,7 +931,7 @@ $Global:MIN_MINOR = 5
 $Global:MIN_BUILD = 0
 $Global:MIN_REVISION = 0
 #############################################################################################
-$Global:RELEASE = "0.2.5"
+$Global:RELEASE = "0.2.6"
 $Global:SCRIPT_RELEASE = "0.1.12"
 $Global:BASEDIR = 'C:\Scripts\SVMTOOL'
 $Global:SVMTOOL_DB_DEFAULT = $Global:BASEDIR
@@ -954,6 +960,7 @@ $Global:DefaultLocalUserCredentials = $DefaultLocalUserCredentials
 $Global:ActiveDirectoryCredentials = $ActiveDirectoryCredentials
 $Global:DefaultLDAPCredentials = $DefaultLDAPCredentials
 $Global:ForceClean = $ForceClean
+$Global:SkipVscanFpolicy = $SkipVscanFpolicy
 $Global:BACKUPALLSVM = $False
 $Global:NumberOfLogicalProcessor = (Get-WmiObject Win32_Processor).NumberOfLogicalProcessors
 if ($Global:NumberOfLogicalProcessor -lt 4) {
