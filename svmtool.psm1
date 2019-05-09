@@ -1282,7 +1282,7 @@ function Update-SvmDrReverse {
         [switch]$NoSnapmirrorWait, 
         
         # Skip vscan and fpolicy actions
-        [switch]$SkipVscanFpolicy,
+        [switch]$SkipVscanFpolicy,      
 
         # Optional, this SvmDr solution cannot transfer the passwords of local users (cifs, cluster)
         # In Non-Interactive Mode, the script cannot create missing users
@@ -2406,10 +2406,10 @@ function New-SvmDrClone {
         [string]$SecondaryCifsLifCustomVlan,
 
         # When the clone cifs server is joined AD, you can override in which OU this happens with this parameter
-        [string]$ActiveDirectoryCustomOU, 
+        [string]$ActiveDirectoryCustomOU,     
         
         # Skip vscan and fpolicy actions
-        [switch]$SkipVscanFpolicy,
+        [switch]$SkipVscanFpolicy,        
 
         # Loglevel of the console output
         [ValidateSet("Debug", "Info", "Warn", "Error", "Fatal", "Off")]

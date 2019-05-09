@@ -695,7 +695,7 @@ Param (
     [Parameter(Mandatory = $false, ParameterSetName = 'CloneDR')]
     [Parameter(Mandatory = $false, ParameterSetName = 'UpdateDR')]
     [Parameter(Mandatory = $false, ParameterSetName = 'UpdateReverse')]
-    [switch]$SkipVscanFpolicy,   
+    [switch]$SkipVscanFpolicy,    
 
     [Parameter(Mandatory = $false, ParameterSetName = 'CleanReverse')]
     [switch]$ForceClean,
@@ -956,6 +956,7 @@ if ($NonInteractive) {
 $Global:LogLevelConsole = $LogLevelConsole
 $Global:AlwaysChooseDataAggr = $AlwaysChooseDataAggr
 $Global:WfaIntegration = $WfaIntegration
+$Global:SkipVscanFpolicy = $SkipVscanFpolicy
 $Global:DefaultLocalUserCredentials = $DefaultLocalUserCredentials
 $Global:ActiveDirectoryCredentials = $ActiveDirectoryCredentials
 $Global:DefaultLDAPCredentials = $DefaultLDAPCredentials
