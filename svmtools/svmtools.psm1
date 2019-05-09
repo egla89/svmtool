@@ -71,7 +71,7 @@ function xmlEncode($text){
 	$text = $text -replace ">","&gt;"
 	$text = $text -replace "<","&lt;"
 	return $text
-}		
+}						  
 
 #############################################################################################
 function add_appender($loggerinstance,$appender){
@@ -9337,7 +9337,7 @@ $request=@"
 <user-or-group>$aclUnixid</user-or-group>
 </cifs-share-access-control-create>                            
 "@
-                                $request = ("$request" -f (xmlEncode -text $aclShare))					  
+								$request = ("$request" -f (xmlEncode -text $aclShare))					  
                                 if($WinSIDCompatible -eq $True){
                                     Write-LogDebug "Invoke-NcSystemApi -Request $request -VserverContext $mySecondaryVserver -Controller $mySecondaryController"
                                     $out=Invoke-NcSystemApi -Request $request -VserverContext $mySecondaryVserver -Controller $mySecondaryController -ErrorVariable ErrorVar
@@ -9450,7 +9450,7 @@ $request=@"
 <user-or-group>$aclUnixid</user-or-group>
 </cifs-share-access-control-create>                            
 "@
-                                    $request = ("$request" -f (xmlEncode -text $aclShare))
+									$request = ("$request" -f (xmlEncode -text $aclShare))
                                     if($WinSIDCompatible -eq $True){
                                         Write-LogDebug "Invoke-NcSystemApi -Request $request -VserverContext $mySecondaryVserver -Controller $mySecondaryController"
                                         $out=Invoke-NcSystemApi -Request $request -VserverContext $mySecondaryVserver -Controller $mySecondaryController -ErrorVariable ErrorVar
@@ -11839,7 +11839,6 @@ Function update_vserver_dr (
 		Write-LogError "ERROR: create_update_igroupdr failed" 
 		$Return = $False
 	}
-	
     Write-LogDebug "update_vserver_dr: Update efficiency policy"
 	if ( ( create_update_efficiency_policy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver )  -ne $True ) {
 		Write-LogError "ERROR: create_update_efficiency_policy_dr failed" 

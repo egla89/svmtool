@@ -1282,7 +1282,7 @@ function Update-SvmDrReverse {
         [switch]$NoSnapmirrorWait, 
         
         # Skip vscan and fpolicy actions
-        [switch]$SkipVscanFpolicy,      
+        [switch]$SkipVscanFpolicy,             
 
         # Optional, this SvmDr solution cannot transfer the passwords of local users (cifs, cluster)
         # In Non-Interactive Mode, the script cannot create missing users
