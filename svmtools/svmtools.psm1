@@ -5,7 +5,7 @@
     This module contains several functions to manage SVMDR, Backup and Restore Configuration...
 .NOTES
     Authors  : Olivier Masson, Jerome Blanchet, Mirko Van Colen
-    Release  : April 17th, 2019
+    Release  : May 9th, 2019
 
 #>
 
@@ -1199,8 +1199,8 @@ Function ask_gateway_from_cli ([string]$myGateway,[string] $workOn="" ) {
         #Wait-Debugger
 		$AskGateway = Read-HostDefault -question "[$workOn] Please Enter a valid Gateway Address" -default $myGateway
 		if ( ( validate_ip_format -IpAddr $AskGateway -AllowNullIP ) -eq $True ) {
-				$loop = $False
-				return $AskGateway
+            $loop = $False
+            return $AskGateway
 		}
 	}
 	return $AskGateway
@@ -3918,8 +3918,8 @@ Function create_update_efficiency_policy_dr(
     }
 }
 #############################################################################################
-# create_update_policy_dr
-Function create_update_policy_dr(
+# create_update_exportpolicy_dr
+Function create_update_exportpolicy_dr(
 	[NetApp.Ontapi.Filer.C.NcController] $myPrimaryController,
 	[NetApp.Ontapi.Filer.C.NcController] $mySecondaryController,
 	[string] $myPrimaryVserver,
@@ -3930,7 +3930,7 @@ Function create_update_policy_dr(
 Try {
     $Return = $True 
     Write-Log "[$workOn] Check SVM Export Policy"
-    Write-LogDebug "create_update_policy_dr[$myPrimaryVserver]: start"
+    Write-LogDebug "create_update_exportpolicy_dr[$myPrimaryVserver]: start"
     if($Backup -eq $True){Write-LogDebug "run in Backup mode [$myPrimaryVserver]"}
     if($Restore -eq $True){Write-LogDebug "run in Restore mode [$myPrimaryVserver]"}
 
@@ -3958,11 +3958,11 @@ Try {
 	foreach ( $ExportPolicy in ( $ExportPolicyList | Skip-Null ) ) {
         $PolicyName=$ExportPolicy.PolicyName
         if($Backup -eq $False){
-		    Write-LogDebug "create_update_policy_dr: check ExportPolicy $PolicyName"
+		    Write-LogDebug "create_update_exportpolicy_dr: check ExportPolicy $PolicyName"
 		    $out = Get-NcExportPolicy -Controller $mySecondaryController -VserverContext $mySecondaryVserver -name $PolicyName  -ErrorVariable ErrorVar
 		    if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcExportPolicy failed [$ErrorVar]" }
 		    if ( $out -eq $null ) {
-			    Write-LogDebug "create_update_policy_dr: New-NcExportPolicy -VserverContext $mySecondaryVserver -Controller $mySecondaryController -Name $PolicyName"
+			    Write-LogDebug "create_update_exportpolicy_dr: New-NcExportPolicy -VserverContext $mySecondaryVserver -Controller $mySecondaryController -Name $PolicyName"
 			    Write-Log "[$workOn] Export Policy [$PolicyName] create"
 			    $out=New-NcExportPolicy -Controller $mySecondaryController -VserverContext $mySecondaryVserver -Name $PolicyName  -ErrorVariable ErrorVar
 			    if ( $? -ne $True ) { $Return = $False ; throw "ERROR: New-NcExportPolicy failed [$ErrorVar]" }
@@ -4010,13 +4010,13 @@ Try {
                 $Sc_ExportPolicyRules=Get-NcExportRule -VserverContext $mySecondaryVserver -Controller $mySecondaryController -PolicyName $PolicyName -Index $RuleIndex  -ErrorVariable ErrorVar
                 if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcExportRule failed [$ErrorVar]" }
                 if ( $Sc_ExportPolicyRules -ne $null ) {
-                    Write-LogDebug "create_update_policy_dr: Rules already Exists Remove it"
+                    Write-LogDebug "create_update_exportpolicy_dr: Rules already Exists Remove it"
                     Write-LogDebug "Remove-NcExportRule -Policy $PolicyName -Index $RuleIndex -Vserver $mySecondaryVserver -Controller $mySecondaryController"
                     $out=Remove-NcExportRule -Policy $PolicyName -Index $RuleIndex -Vserver $mySecondaryVserver -Controller $mySecondaryController -Confirm:$False  -ErrorVariable ErrorVar
                     if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Remove-NcExportRule failed [$ErrorVar]" }
                 } 
-                Write-LogDebug "create_update_policy_dr: $RuleIndex"
-                Write-LogDebug "create_update_policy_dr: New-NcExportRule -Policy $PolicyName -Index $RuleIndex  -ClientMatch $ClientMatch -ReadOnlySecurityFlavor  $RoRule -ReadWriteSecurityFlavor  $RwRule -Protocol  $Protocol -Anon  $AnonymousUserId -SuperUserSecurityFlavor $SuperUserSecurity -NtfsUnixSecurityOps $ExportNtfsUnixSecurityOps -ChownMode $ExportChownMode -Vserver $mySecondaryVserver -Controller $mySecondaryController"
+                Write-LogDebug "create_update_exportpolicy_dr: $RuleIndex"
+                Write-LogDebug "create_update_exportpolicy_dr: New-NcExportRule -Policy $PolicyName -Index $RuleIndex  -ClientMatch $ClientMatch -ReadOnlySecurityFlavor  $RoRule -ReadWriteSecurityFlavor  $RwRule -Protocol  $Protocol -Anon  $AnonymousUserId -SuperUserSecurityFlavor $SuperUserSecurity -NtfsUnixSecurityOps $ExportNtfsUnixSecurityOps -ChownMode $ExportChownMode -Vserver $mySecondaryVserver -Controller $mySecondaryController"
                 $out=New-NcExportRule -Policy $PolicyName -Index $RuleIndex  -ClientMatch $ClientMatch -ReadOnlySecurityFlavor  $RoRule -ReadWriteSecurityFlavor  $RwRule -Protocol  $Protocol -Anon  $AnonymousUserId -SuperUserSecurityFlavor $SuperUserSecurity -NtfsUnixSecurityOps $ExportNtfsUnixSecurityOps -ChownMode $ExportChownMode -Vserver $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar
                 if ( $? -ne $True ) { $Return = $False ; throw "ERROR: New-NcExportRule failed [$ErrorVar]" }
                 if ( $IsAllowSetUidEnabled -eq $True ) {
@@ -4036,7 +4036,7 @@ Try {
             }
         }
 	}
-	Write-LogDebug "create_update_policy_dr[$myPrimaryVserver]: end"
+	Write-LogDebug "create_update_exportpolicy_dr[$myPrimaryVserver]: end"
 	return $Return
 }
 Catch {
@@ -4675,7 +4675,7 @@ Catch {
     $Return=$True
     Write-LogDebug "Set all lif [$state] on [$workOn]"
     if($Backup -eq $True){Write-LogDebug "run in Backup mode [$myPrimaryVserver]"}
-    if($Restore -eq $True){Write-LogDebug "run in Restore mode [$myPrimaryVserver]"}
+    if($Restore -eq $True){Write-LogDebug "run in Restore mode [$workOn]"}
     $lifsdest=Get-NcNetInterface -vserver $mySecondaryVserver -Controller $mySecondaryController -FirewallPolicy !data
 	if($lifsdest -eq $null)
 	{
@@ -4697,7 +4697,7 @@ Catch {
     }
     if($Backup -eq $False -and $Restore -eq $False){
         $lifssource=Get-NcNetInterface -vserver $myPrimaryVserver -Controller $myPrimaryController | select Address
-        if($lifssource -eq $null){
+        if($null -eq $lifssource){
             Write-LogDebug "No Lif on source vserver"
             return $True
         }
@@ -4708,8 +4708,8 @@ Catch {
 	foreach($lif in $lifsdest){
         $lif_name=$lif.InterfaceName
 		$lif_ip=$lif.Address
-		if($lif_ip -notin $IPsource){
-			Write-LogDebug "Set LIF [$lif_name] into state [$state]"
+		if( ($lif_ip -notin $IPsource) -or ($Global:RESTORE_ORIGINAL -eq $True) ){
+			Write-LogDebug "[$workOn] Set LIF [$lif_name] into state [$state]"
 			$ret=Set-NcNetInterface -Name $lif_name -Vserver $mySecondaryVserver -Controller $mySecondaryController -AdministrativeStatus $state -ErrorVariable ErrorVar
 			if($? -ne $true){
 				Write-LogDebug "ERROR: failed to set lif [$lif_name] into state [$sate] reason [$ErrorVar]"
@@ -7219,12 +7219,14 @@ Try {
                         if($myGateway.Length -eq 0){
                             $myGateway=$PrimaryOtherGateway
                         }
-                        $myGateway=ask_gateway_from_cli -myGateway $myGateway -workOn $($workOn+" Destination "+$PrimaryOtherDestination)
-                        Write-Log "[$workOn] Add New Route Destination [$PrimaryOtherDestination] Gateway [$myGateway] Metric [$PrimaryOtherMetric]"
-                        Write-LogDebug "New-NcNetRoute -Destination $PrimaryOtherDestination -Gateway $myGateway -Metric $PrimaryOtherMetric -VserverContext $mySecondaryVserver -Controller $mySecondaryController"
-                        $ret=New-NcNetRoute -Destination $PrimaryOtherDestination -Gateway $myGateway -Metric $PrimaryOtherMetric -VserverContext $mySecondaryVserver -Controller $mySecondaryController -ErrorVariable ErrorVar -Confirm:$false
-                        if ( $? -ne $True ) { $Return = $False ; Write-LogError "ERROR: New-NcNetRoute failed [$ErrorVar]"; continue }
-                        $OtherRouteDone+=$PrimaryOtherDestination
+                        foreach($Gateway in $myGateway){
+                            $Gateway=ask_gateway_from_cli -myGateway $Gateway -workOn $($workOn+" Destination "+$PrimaryOtherDestination)
+                            Write-Log "[$workOn] Add New Route Destination [$PrimaryOtherDestination] Gateway [$Gateway] Metric [$PrimaryOtherMetric]"
+                            Write-LogDebug "New-NcNetRoute -Destination $PrimaryOtherDestination -Gateway $Gateway -Metric $PrimaryOtherMetric -VserverContext $mySecondaryVserver -Controller $mySecondaryController"
+                            $ret=New-NcNetRoute -Destination $PrimaryOtherDestination -Gateway $Gateway -Metric $PrimaryOtherMetric -VserverContext $mySecondaryVserver -Controller $mySecondaryController -ErrorVariable ErrorVar -Confirm:$false
+                            if ( $? -ne $True ) { $Return = $False ; Write-LogError "ERROR: New-NcNetRoute failed [$ErrorVar]"; continue }
+                            $OtherRouteDone+=$PrimaryOtherDestination
+                        }
                     }
                 }
                 else{
@@ -7248,12 +7250,14 @@ Try {
                         if($myGateway.Length -eq 0){
                             $myGateway=$PrimaryOtherGateway
                         }
-                        $myGateway=ask_gateway_from_cli -myGateway $myGateway -workOn $workOn
-                        Write-Log "[$workOn] Add New Route RoutingGroup [$PrimaryOtherRouting] Destination [$PrimaryOtherDestination] Gateway [$myGateway] Metric [$PrimaryOtherMetric]"
-                        Write-LogDebug "New-NcNetRoutingGroupRoute -RoutingGroup $PrimaryOtherRouting -Destination $PrimaryOtherDestination -Gateway $myGateway -Metric $PrimaryOtherMetric -Vserver $mySecondaryVserver -Controller $mySecondaryController"
-                        $ret=New-NcNetRoutingGroupRoute -RoutingGroup $PrimaryOtherRouting -Destination $PrimaryOtherDestination -Gateway $myGateway -Metric $PrimaryOtherMetric -Vserver $mySecondaryVserver -Controller $mySecondaryController -ErrorVariable ErrorVar -Confirm:$false
-                        if ( $? -ne $True ) { $Return = $False ; Write-LogError "ERROR: New-NcNetRoute failed [$ErrorVar]"; continue }
-                        $OtherRouteDone+=$PrimaryOtherDestination
+                        foreach($Gateway in $myGateway){
+                            $Gateway=ask_gateway_from_cli -myGateway $Gateway -workOn $($workOn+" Destination "+$PrimaryOtherDestination)
+                            Write-Log "[$workOn] Add New Route RoutingGroup [$PrimaryOtherRouting] Destination [$PrimaryOtherDestination] Gateway [$Gateway] Metric [$PrimaryOtherMetric]"
+                            Write-LogDebug "New-NcNetRoutingGroupRoute -RoutingGroup $PrimaryOtherRouting -Destination $PrimaryOtherDestination -Gateway $Gateway -Metric $PrimaryOtherMetric -Vserver $mySecondaryVserver -Controller $mySecondaryController"
+                            $ret=New-NcNetRoutingGroupRoute -RoutingGroup $PrimaryOtherRouting -Destination $PrimaryOtherDestination -Gateway $Gateway -Metric $PrimaryOtherMetric -Vserver $mySecondaryVserver -Controller $mySecondaryController -ErrorVariable ErrorVar -Confirm:$false
+                            if ( $? -ne $True ) { $Return = $False ; Write-LogError "ERROR: New-NcNetRoute failed [$ErrorVar]"; continue }
+                            $OtherRouteDone+=$PrimaryOtherDestination
+                        }
                     }
                 }
                 <# $VersionTuple=(Get-NcSystemVersionInfo -Controller $mySecondaryController | Select-Object VersionTuple).VersionTuple
@@ -10268,7 +10272,7 @@ Try {
     }
     if ( ( $ret=check_update_vserver -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed check update vserver" ; $Return = $False }
     if ( ( $ret=create_update_cron_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -Backup $runBackup -Restore $runRestore) -ne $True ) {Write-LogError "ERROR: create_update_cron_dr"}
-    if ( ( $ret=create_update_policy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create all policy" ; $Return = $False }
+    if ( ( $ret=create_update_exportpolicy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create all policy" ; $Return = $False }
     if ( ( $ret=create_update_efficiency_policy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create all Efficiency policy" ; $Return = $False }
     if ( ( $ret=create_update_firewallpolicy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create all Firewall policy" ; $Return = $False }
     if ( ( $ret=create_update_role_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create all Role"}
@@ -10323,17 +10327,17 @@ Try {
 
 #############################################################################################
 Function create_vserver_dr (
-    [NetApp.Ontapi.Filer.C.NcController] $myPrimaryController,
-    [NetApp.Ontapi.Filer.C.NcController] $mySecondaryController,
-	[string] $myPrimaryVserver,
-    [string] $mySecondaryVserver,
-    [string] $workOn=$mySecondaryVserver,
-    [bool] $DDR,
-    [switch] $Backup,
-    [switch] $Restore,
-    [string] $aggrMatchRegEx,
-    [string] $nodeMatchRegEx,
-    [string] $myDataAggr,
+    [NetApp.Ontapi.Filer.C.NcController]$myPrimaryController,
+    [NetApp.Ontapi.Filer.C.NcController]$mySecondaryController,
+	[string]$myPrimaryVserver,
+    [string]$mySecondaryVserver,
+    [string]$workOn=$mySecondaryVserver,
+    [bool]$DDR,
+    [switch]$Backup,
+    [switch]$Restore,
+    [string]$aggrMatchRegEx,
+    [string]$nodeMatchRegEx,
+    [string]$myDataAggr,
     [string]$TemporarySecondaryCifsIp,
     [string]$SecondaryCifsLifMaster,
     [string]$SecondaryCifsLifCustomVlan,
@@ -10460,7 +10464,7 @@ Try {
     if ( ( $ret=check_update_vserver -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed check update vserver" ; $Return = $False }
     if ( ( $ret=create_vserver_peer -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create vserver peer" ; $Return = $False }
     if ( ( $ret=create_update_cron_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -Backup $runBackup -Restore $runRestore) -ne $True ) {Write-LogError "ERROR: create_update_cron_dr"}
-    if ( ( $ret=create_update_policy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create all policy" ; $Return = $False }
+    if ( ( $ret=create_update_exportpolicy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create all policy" ; $Return = $False }
     if ( ( $ret=create_update_efficiency_policy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create all Efficiency policy" ; $Return = $False }
     if ( ( $ret=create_update_firewallpolicy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create all Firewall policy" ; $Return = $False }
     if ( ( $ret=create_update_role_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create all Role"}
@@ -11797,8 +11801,8 @@ Function update_vserver_dr (
 		$Return = $False
 	}
 	Write-LogDebug "update_vserver_dr: Update policy"
-	if ( ( create_update_policy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver )  -ne $True ) {
-		Write-LogError "ERROR: create_update_policy_dr failed" 
+	if ( ( create_update_exportpolicy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver )  -ne $True ) {
+		Write-LogError "ERROR: create_update_exportpolicy_dr failed" 
 		$Return = $False
 	}
     Write-LogDebug "update_vserver_dr: Update efficiency policy"
@@ -15177,7 +15181,7 @@ Function create_quota_rules_from_quotadb (
         $SVMTOOL_DB_CLUSTER=$Global:SVMTOOL_DB + '\' + $ClusterName  + '.cluster'
         if ( ( Test-Path $SVMTOOL_DB_CLUSTER -pathType container ) -eq $false ) 
         {
-            Write-LogError "ERROR: Cluster [$ClusterName] found in SVMTOOL_DB [$Global:SVMTOOL_DB]" 
+            Write-LogError "ERROR: Cluster [$ClusterName] not found in SVMTOOL_DB [$Global:SVMTOOL_DB]" 
             return $false
         }
         if ( ( Test-Path $SVMTOOL_DB_CLUSTER/$myVserver.vserver -pathType container ) -eq $false ) 
@@ -15722,4 +15726,98 @@ Catch {
     handle_error $_ $myVserver
 	return $Return
 }
+}
+
+#############################################################################################
+Function restore_object (
+    [NetApp.Ontapi.Filer.C.NcController] $myPrimaryController,
+    [NetApp.Ontapi.Filer.C.NcController] $mySecondaryController,
+    [string]$myPrimaryVserver,
+    [string]$mySecondaryVserver,
+    [string]$workOn, 
+    [string]$nodeMatchRegEx,
+    [string]$aggrMatchRegEx,
+    [string]$myDataAggr,
+    [ValidateSet("Lifs", "Volumes", "Exports", "Shares", "Quotas","Users")]
+    [string[]]$objects=@("")
+    ) {
+Try {
+	$Return = $true
+    Write-LogDebug "restore_object: start"
+
+    if("Lifs" -in $objects){
+        if ( ( $ret=create_lif_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $mySecondaryVserver  -Backup $False -Restore $True -nodeMatchRegEx $nodeMatchRegEx ) -ne $True ) {
+            $Return=$False
+            Write-LogError "ERROR: Failed to create all LIF on [$mySecondaryVserver]"
+        }
+        if ( ( $ret=set_all_lif -mySecondaryVserver $mySecondaryVserver -myPrimaryVserver $myPrimaryVserver -mySecondaryController $mySecondaryController  -myPrimaryController $myPrimaryController -workOn $mySecondaryVserver  -state up -Backup $False -Restore $True ) -ne $True ) {
+            $Return=$False
+            Write-LogError "ERROR: Failed to set all lif up on [$mySecondaryVserver]"
+        }
+    }
+    if("Volumes" -in $objects){
+        #add code here to restore Volumes & QOS PolicyGroup
+        $ret=create_volume_voldr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver  -workOn $mySecondaryVserver  -Backup $False -Restore $True -aggrMatchRegEx $aggrMatchRegEx -myDataAggr $myDataAggr 
+        if ( $ret.count -gt 0 ) {
+            if ($ret[0] -ne $True ) { $Return=$False; Write-LogError "ERROR: Failed to create all volumes" }
+        }else{
+            if ($ret -ne $True ) { $Return=$False; Write-LogError "ERROR: Failed to create all volumes" ; clean_and_exit 1 }
+        }
+        if ( ( $ret=check_update_voldr  -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $mySecondaryVserver  -Backup $False -Restore $True) -ne $True ) { 
+            $Return=$False
+            Write-LogError "ERROR: check_update_voldr failed"
+        }
+        if ( ( $ret=create_update_qospolicy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $False -Restore $True ) -ne $True ) { 
+            Write-LogError "ERROR: create_update_qospolicy_dr" 
+            $Return = $False 
+        }
+        if ($Global:VOLUME_TYPE -eq "RW") {
+            # in restore mode force update snapshot policy on all destinations volumes
+            if ( ( $ret=mount_voldr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver  -workOn $workOn -Backup $False -Restore $True ) -ne $True ) { Write-LogError "ERROR: Failed to mount all volumes " ; $Return = $False }
+            $Global:ForceUpdateSnapPolicy = $True
+            if ( ( $ret = set_vol_options_from_voldb -myVserver $mySecondaryVserver -myController $mySecondaryController -Restore) -ne $True ) {
+                Write-LogDebug "ERROR in set_vol_options_from_voldb [$ret]"
+                $Return = $False
+            }
+        }
+    }
+    if("Exports" -in $objects){
+        #add code here to restore Exports Policy and Rules
+        if ( ( $ret=create_update_exportpolicy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn -Backup $False -Restore $True ) -ne $True ) { 
+            Write-LogError "ERROR: Failed to create all policy"
+            $Return = $False 
+        }
+        if ( ( $ret=update_qtree_export_policy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver ) -ne $True ) {
+            Write-Log "ERROR Failed to modify all Qtree Export Policy"
+            $Return = $False
+        }
+    }
+    if("Shares" -in $objects){
+        #add code here to restore CIFS Shares & Symlink?
+        if ( ( $ret=create_update_CIFS_shares_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { 
+            Write-LogError "ERROR: create_update_CIFS_share"
+            $Return = $False 
+        }
+        if ( ( $ret=create_update_cifs_symlink_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { 
+            Write-LogError "ERROR: Failed to create all cifs symlinks"
+            $Return = $False 
+        }
+    }
+    if("Quotas" -in $objects){
+        #add code here to restore Quotas
+        <# if ( ( $ret = create_quota_rules_from_quotadb -myController $mySecondaryController -myVserver $mySecondaryVserver -NoCheck ) -ne $True ) {
+            Write-LogError "ERROR: create_quota_rules_from_quotadb failed"
+        } #>  #Il faut un lien vers une instance pour que le code ci-dessus puisse fonctionner.
+        # Les fichiers quotarules.<policy>.<date> ne sont créés qu'avec une instance qui backup les quota rules...
+        # ici en mode restoreobjects nous n'avons pas d'instance donc pas de lien vers SVMTOOL_DB point vers nu folder backup_<>
+        # et non le repertoire de l'instance...
+    }
+
+    Write-LogDebug "restore_object: end"
+    return $Return
+}
+Catch {
+        handle_error $_ $workOn
+        return $Return
+    }
 }

@@ -5,8 +5,8 @@
 #
 # Generated on: 2018-06-07
 #
-# Update by : Mirko Van Colen
-# Updated on : 2019-04-17
+# Update by : Olivier MASSON
+# Updated on : 2019-05-09
 #
 # Version Control :
 #   1.0.4 : Initial version
@@ -44,6 +44,10 @@
 #   1.2.1 : Fix Change of XDPPolicy during ConfigureDR (New-SvmDR) or UpdateDR (Update-SvmDr)
 #   1.2.2 : Added custom vlan & ou to join in AD
 #   1.2.3 : Fix check if CIFS server is running
+#   1.2.4 : Fix gateway creation
+#           Add support for Data replication with Sync and StrictSync Policy
+#           Automatic conversion of Async to Sync relationships and vice versa
+#           Introduce RestoreObject to allow restores only part of SVM configuration: LIFs, Volumes, Exports, Shares, Quotas (still is progress)
 #           
 @{
 
@@ -51,7 +55,7 @@
     RootModule        = '.\svmtools.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '1.2.3'
+    ModuleVersion     = '1.2.4'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()

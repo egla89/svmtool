@@ -132,7 +132,7 @@
     This option greatly reduces cutover window.
     This can only be used during the last UpdateDR, when activity has been shutdown on source and before the ActivateDR.
     Obviously, a previous UpdateDR should be run without this argument in order to sync all Qtree Export Policy.
-	This penultimate UpdateDR will be launched (normaly without this argument) right after freezing all creation/modification/deletion of qtree, 
+	This penultimate UpdateDR will be launched (normally without this argument) right after freezing all creation/modification/deletion of qtree, 
 	but by keeping an activity on source platform.
 .PARAMETER IgnoreQuotaOff
     Optional argument
@@ -398,7 +398,7 @@
 .NOTES
     Author  : Olivier Masson
     Author  : Mirko Van Colen
-    Version : April 5th, 2019
+    Version : May 9th, 2019
     Version History : 
         - 0.0.3 : 	Initial version 
         - 0.0.4 : 	Bugfix, typos and added ParameterSets
@@ -435,6 +435,10 @@
         - 0.2.2 :   Fix change of XDPPolicy during ConfigureDR or UpdateDR
         - 0.2.3 :   Add Cifs join options : override AD OU + override temp-cifs-join-lif VLAN
         - 0.2.4 :   Fix check if CIFS server is running
+        - 0.2.5 :   Fix gateway creation
+                    Add support for Data replication with Sync and StrictSync Policy
+                    Automatic conversion of Async to Sync relationships and vice versa
+                    Introduce RestoreObject to allow restores only part of SVM configuration: LIFs, Volumes, Exports, Shares, Quotas, Users (still is progress) 
 #>
 [CmdletBinding(HelpURI = "https://github.com/oliviermasson/svmtool", DefaultParameterSetName = "ListInstance")]
 Param (
@@ -564,6 +568,16 @@ Param (
     [Parameter(Mandatory = $true, ParameterSetName = 'ReCreateQuota')]
     [Parameter(Mandatory = $true, ParameterSetName = 'InternalTest')]
     [string]$Vserver,
+
+    [Parameter(Mandatory = $true, ParameterSetName = 'RestoreObject')]
+    [ValidateSet("Lifs", "Volumes", "Exports", "Shares", "Quotas","Users")]
+    [string[]]$Objects=@(""),
+
+    [Parameter(Mandatory = $false, ParameterSetName = 'RestoreObject')]
+    [string]$DestinationCluster,
+
+    [Parameter(Mandatory = $false, ParameterSetName = 'RestoreObject')]
+    [string]$DestinationSVM,
 
     [Parameter(Mandatory = $false, ParameterSetName = 'Setup')]
     [string]$VserverDr,
@@ -900,17 +914,7 @@ Param (
 
     [Parameter(Mandatory = $false, ParameterSetName = 'ConfigureDR')]
     [Parameter(Mandatory = $false, ParameterSetName = 'CloneDR')]
-    [string]$ActiveDirectoryCustomOU = $null,
-            
-    [Parameter(Mandatory = $true, ParameterSetName = 'RestoreObject')]
-    [ValidateSet("Lif", "Volumes", "Exports", "Shares", "Quotas","Users")]
-    [string]$Object="",
-
-    [Parameter(Mandatory = $false, ParameterSetName = 'RestoreObject')]
-    [string]$DestinationCluster,
-
-    [Parameter(Mandatory = $false, ParameterSetName = 'RestoreObject')]
-    [string]$DestinationSVM
+    [string]$ActiveDirectoryCustomOU = $null
 )
 
 #############################################################################################
@@ -921,8 +925,8 @@ $Global:MIN_MINOR = 5
 $Global:MIN_BUILD = 0
 $Global:MIN_REVISION = 0
 #############################################################################################
-$Global:RELEASE = "0.2.4"
-$Global:SCRIPT_RELEASE = "0.1.11"
+$Global:RELEASE = "0.2.5"
+$Global:SCRIPT_RELEASE = "0.1.12"
 $Global:BASEDIR = 'C:\Scripts\SVMTOOL'
 $Global:SVMTOOL_DB_DEFAULT = $Global:BASEDIR
 $Global:CONFBASEDIR = $BASEDIR + '\etc\'
@@ -1053,8 +1057,8 @@ else {
 
 $PSTKVersion = Get-NaToolkitVersion
 if ($PSTKVersion.Major -lt $Global:MIN_MAJOR -and $PSTKVersion.Minor -lt $Global:MIN_MINOR -and $PSTKVersion.Minor -lt $Global:MIN_BUILD) {
-    Write-Warning "Your PSTK version is lower than mandatory version (ToolkitVersion 4.5.0 / PSTK 4.7)"
-    Write-Warning "You will not be able to manage volume encryption and other options may not work properly"
+    Write-LogWarn "Your PSTK version is lower than mandatory version (ToolkitVersion 4.5.0 / PSTK 4.7)"
+    Write-LogWarn "You will not be able to manage volume encryption and other options may not work properly"
     $Global:PSTKEncryptionPossible = $False
 }
 else {
@@ -1668,7 +1672,7 @@ if ( $Restore ) {
                     # in restore mode force update snapshot policy on all destinations volumes
                     $Global:ForceUpdateSnapPolicy = $True
                     if ( ( $ret = set_vol_options_from_voldb -myVserver $SourceVserver -myController $DestinationController -Restore) -ne $True ) {
-                        Write-LogDebug "ERROR in create_vserver_dr [$ret]"
+                        Write-LogDebug "ERROR in set_vol_options_from_voldb [$ret]"
                         #return $False
                     }
                     if ( ($ret = restore_quota -myController $DestinationController -myVserver $SourceVserver) -ne $True) {
@@ -1777,32 +1781,128 @@ if ( $Restore ) {
     clean_and_exit 0
 } #End Restore
 
-# RestoreObject Restore a particular specified object into an SVM
+# RestoreObject  : Restore from JSON Backup specific objects into an SVM
 if ( $RestoreObject ){
     $Run_Mode = "RestoreObject"
     Write-LogOnly "SVMTOOL Run RestoreObject"
-    $Global:RESTORE_SRC_CLUSTER = $RestoreObject
+    $RESTORE_SRC_CLUSTER = $RestoreObject
     if( $DestinationCluster ){
-        $Global:RESTORE_DST_CLUSTER = $DestinationCluster
+        $RESTORE_DST_CLUSTER = $DestinationCluster
     }else{
-        $Global:RESTORE_DST_CLUSTER = $RestoreObject    
+        $RESTORE_DST_CLUSTER = $RestoreObject    
     }
-    $Global:SourceSVM=$Vserver
-    if( $DestinationSVM ){
-        $Global:DestinationSVM = $DestinationSVM
-    }else{
-        $Global:DestinationSVM = $Vserver
+    if( -not $DestinationSVM ){
+        $DestinationSVM = $Vserver
     }
-    if ( ($Global:SourceSVM -eq $Global:DestinationSVM) -and ($Global:RESTORE_SRC_CLUSTER -eq $Global:RESTORE_DST_CLUSTER) ) {
+    if ( ($Vserver -eq $DestinationSVM) -and ($RESTORE_SRC_CLUSTER -eq $RESTORE_DST_CLUSTER) ) {
         $Global:RESTORE_ORIGINAL = $True
         Write-Log "[$RestoreObject] Restore to Origin [$Vserver]"
     }
     else {
         $Global:RESTORE_ORIGINAL = $False	
-    }  
+    }
+    if ((Test-Path $CONFFILE) -eq $True ) {
+        $read_conf = read_config_file $CONFFILE
+        if ( $read_conf -eq $null ) {
+            Write-LogError "ERROR: read configuration file $CONFFILE failed"
+            clean_and_exit 1
+        }
+        $SVMTOOL_DB = $read_conf.Get_Item("SVMTOOL_DB")
+    }
+    if ($SVMTOOL_DB.Length -gt 0) {
+        Write-Log "Restore from Cluster [$RESTORE_SRC_CLUSTER] from Backup Folder [$SVMTOOL_DB]"
+    }
+    else {
+        Write-Error "ERROR: No Backup Folder configured, check configuration file [$CONFFILE] for item [SVMTOOL_DB]"
+        clean_and_exit 1
+    }
+    if ((Test-Path $SVMTOOL_DB) -eq $null) {
+        Write-Error "ERROR: no Backup available for [$RESTORE_SRC_CLUSTER] inside [$SVMTOOL_DB]"
+        clean_and_exit 1	
+    }
+    Write-Log "Select Backup Date for [$Vserver]"
+    $BackupAvailable = Get-ChildItem $($SVMTOOL_DB + "\" + $Vserver) | Sort-Object -Property CreationTime
+    if ($BackupAvailable -eq $null) {
+        Write-Error "ERROR: No Backup available for [$Vserver]"
+        clean_and_exit 1
+    }
+    else {
+        $ans = $null
+        if ($SelectBackupDate -eq $True) {
+            $listBackupAvailable = ($BackupAvailable | Select-Object Name).Name
+            while ($ans -eq $null) {
+                Write-Host "Select a Backup Date for [$Vserver] : "
+                $i = 1
+                foreach ($date in $listBackupAvailable) {
+                    $numFiles = (Get-ChildItem $($SVMTOOL_DB + "\" + $Vserver + "\" + $date + "\") | Measure-Object).Count
+                    $datetime = [datetime]::parseexact($date, "yyyyMMddHHmmss", $null)
+                    Format-ColorBrackets "`t[$i] : [$datetime] [$numFiles Files]" -FirstIsSpecial
+                    $i++
+                }
+                $Query = "Please select Backup from (1.." + $listBackupAvailable.count + ")"
+                $ans = Read-HostDefault -question $Query -default $listBackupAvailable.count
+                $ans = [int]$ans / 1
+                if (($ans -notmatch "[0-9]") -or ($ans -lt 1 -or $ans -gt $listBackupAvailable.count)) {
+                    Write-Warning "Bad input"; $ans = $null
+                }
+            }
+            $date = $listBackupAvailable[$ans - 1]
+        }
+        else {
+            # display lastbackup automatically selected for each SVM (with #files inside folder)
+            $LastBackup = $BackupAvailable[-1]
+            $date = $LastBackup.Name
+            $datetime = [datetime]::parseexact($date, "yyyyMMddHHmmss", $null)
+            $numFiles = (Get-ChildItem $($SVMTOOL_DB + "\" + $Vserver + "\" + $date + "\") | Measure-Object).Count
+            Write-Log "[$Vserver] Last Backup date is [$datetime] with [$numFiles Files]" -firstValueIsSpecial
+        }
+    }
+    $Global:JsonPath = $($SVMTOOL_DB + "\" + $Vserver + "\" + $date + "\")
+    check_create_dir -FullPath $Global:JsonPath -Vserver $Vserver
 
+    # Connect to the Cluster
+    $myCred = get_local_cDotcred ($RESTORE_SRC_CLUSTER) 
+    $tmp_str = $MyCred.UserName
+    Write-LogDebug "Connect to cluster [$RESTORE_SRC_CLUSTER] with login [$tmp_str]"
+    Write-LogDebug "connect_cluster -myController $RESTORE_SRC_CLUSTER -myCred $MyCred -myTimeout $Timeout"
+    if ( ( $NcPrimaryCtrl = connect_cluster -myController $RESTORE_SRC_CLUSTER -myCred $MyCred -myTimeout $Timeout ) -eq $False ) {
+        Write-LogError "ERROR: Unable to Connect to NcController [$RESTORE_SRC_CLUSTER]" 
+        clean_and_exit 1
+    }
+    $myCred = get_local_cDotcred ($RESTORE_DST_CLUSTER) 
+    Write-LogDebug "connect_cluster -myController $RESTORE_DST_CLUSTER -myCred $MyCred -myTimeout $Timeout"
+    if ( ( $NcSecondaryCtrl = connect_cluster -myController $RESTORE_DST_CLUSTER -myCred $MyCred -myTimeout $Timeout ) -eq $False ) {
+        Write-LogError "ERROR: Unable to Connect to NcController [$RESTORE_DST_CLUSTER]" 
+        clean_and_exit 1
+    } 
 
-    Write-Log "Finished restore [$Global:RESTORE_SRC_CLUSTER]:[$Global:SourceSVM] to [$Global:RESTORE_DST_CLUSTER]:[$Global:DestinationSVM]"
+    # if restore volumes to Origin, force restore volumes as RW volumes
+    if ($RW -eq $True) {
+        $Global:VOLUME_TYPE = "RW"
+    }
+    else {
+        $Global:VOLUME_TYPE = "DP"
+    }
+    if($Global:RESTORE_ORIGINAL -eq $True){
+        $Global:VOLUME_TYPE="RW"
+    }
+    $Global:SVMTOOL_DB=$SVMTOOL_DB
+    # add here code to replace above by a call to function from svmtools.psm1
+    # restore_objects myPrimaryController mySecondaryController myPrimaryVserver mySecondaryVserver workOn nodeMatchRegEx aggrMatchRegEx myDataAggr RW
+    if ( ( $ret= restore_object -myPrimaryController $NcPrimaryCtrl `
+    -mySecondaryController $NcSecondaryCtrl `
+    -myPrimaryVserver $Vserver `
+    -mySecondaryVserver $DestinationSVM `
+    -workOn $DestinationSVM `
+    -nodeMatchRegEx $nodeMatchRegEx `
+    -aggrMatchRegEx $aggrMatchRegEx `
+    -myDataAggr $myDataAggr `
+    -objects $Objects ) -ne $True ) {
+        Write-LogError "ERROR : Failed to restore all objects for [$Global:DestinationSVM]"
+        clean_and_exit 1
+    }
+
+    Write-Log "Finished restore object [$Objects] from [$RESTORE_SRC_CLUSTER]:[$Vserver] to [$Global:RESTORE_DST_CLUSTER]:[$Global:DestinationSVM]" -firstValueIsSpecial
     clean_and_exit 0  
 }
 
@@ -1811,9 +1911,9 @@ if ( ( Test-Path $CONFFILE ) -eq $False ) {
     clean_and_exit 1
 }
 
-if ( ( $Vserver -eq $null ) -or ( $Vserver -eq "" ) ) { 
+if ( ( $null -eq $Vserver ) -or ( $Vserver -eq "" ) ) { 
     Write-LogError "ERROR: Missing an argument for parameter 'Vserver'" 
-    Write-LogError "ERROR: Please run svmdr -help for information" 
+    Write-LogError "ERROR: Please run get-help svmtools.pS1 for more information" 
     Clean_and_exit 1 
 }
 
