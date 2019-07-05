@@ -5,7 +5,7 @@
     This module contains several functions to manage SVMDR, Backup and Restore Configuration...
 .NOTES
     Authors  : Olivier Masson, Jerome Blanchet, Mirko Van Colen
-    Release  : May 9th, 2019
+    Release  : July 7th, 2019
 
 #>
 
@@ -6425,21 +6425,24 @@ Function wait_snapmirror_dr(
     	$mySecondaryCluster = (Get-NcCluster -Controller $mySecondaryController  -ErrorVariable ErrorVar).ClusterName			
     	if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcCluster failed [$ErrorVar]" }
 
-    	Write-Log "[$mySecondaryVserver] Please wait until all snapmirror transfers terminate"
+    	Write-Log "[$mySecondaryVserver] Please wait until all snapmirror transfers terminated"
 
-    	$loop = $True ; $count = 0 
-        $noSleep=$false
-    	while ( $loop -eq $True ) 
+    	$noSleep=$false
+        $isTimeout=$false
+        $StartTime=Get-Date
+        $GoodStatus=$false
+        while ( ( $GoodStatus -eq $false ) -and ( $isTimeout -eq $false ) ) 
         {
-    		$count++
-    		$loop = $False
+            Start-Sleep 2
     		Write-LogDebug "Get-NcSnapmirror -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -VserverContext $mySecondaryVserver -Controller $mySecondaryController"
             $relationList = Get-NcSnapmirror -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -VserverContext $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar
             if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcSnapmirror failed [$ErrorVar]" }
             if( $null -eq $relationList ){
                 Write-LogDebug "No SnapMirror relationship"
+                Write-LogDebug "wait_snapmirror_dr[$myPrimaryVserver]: end"
                 return $True
             }
+            $nbGood=0
     		foreach ( $relation in ( $relationList | Skip-Null ) ) 
             {
     			$MirrorState=$relation.MirrorState
@@ -6448,25 +6451,31 @@ Function wait_snapmirror_dr(
     			$SourceLocation=$relation.SourceLocation
     			$DestinationLocation=$relation.DestinationLocation
     			$RelationshipStatus=$relation.RelationshipStatus
-    			Write-LogDebug "Relation [$SourceLocation] [$DestinationLocation] is [$MirrorState] [$RelationshipStatus] "
-    			if ( ( ( $MirrorState -eq "uninitialized" ) -or ( $MirrorState -eq "snapmirrored" ) -or ( $MirrorState -eq "broken-off" ) ) -and ( $RelationshipStatus -eq "transferring" -or $RelationshipStatus -eq "finalizing" -or $RelationshipStatus -eq "preparing") ) 
-                {
-    				$loop = $True
-    			} 
-                elseif ( ( $MirrorState -eq "snapmirrored" ) -and ( $RelationshipStatus -in $("idle","insync") ) ) 
-                {
-                    $loop = $false
-                    $noSleep=$True
-                } 
-                else 
-                {
-    				Write-LogError "ERROR: Relation [$SourceLocation] [$DestinationLocation] is [$MirrorState] [$RelationshipStatus] " 
-    				$Return = $False
-    			}
+    			Write-LogDebug "Relation [$SourceLocation] ---> [$DestinationLocation] is in status [$MirrorState]:[$RelationshipStatus] "
+                if ( ( $MirrorState -eq "snapmirrored" ) -and ( $RelationshipStatus -in $("idle","insync") ) ){
+                    $GoodStatus = $True
+                    $nbGood+=1
+                }else{
+                    $GoodStatus=$False
+                }
             }
-            if($noSleep -eq $false){sleep $count}
+            if($nbGood -eq $relationList.count){
+                Write-LogDebug "All relationship are in the good status, so exit with true"
+                Write-Log "[$mySecondaryVserver] All Snapmirror transfers terminated"
+                Write-LogDebug "wait_snapmirror_dr[$mySecondaryVserver]: end"
+                return $True
+            }else{
+                $missing=$relationList.count - $nbGood
+                Write-LogDebug "Not all relationship are in the good status, so still waiting for $missing relationship(s)"
+            }
+            $CurrentTime=Get-date
+            $TimeoutTime = ($CurrentTime - $StartTime).TotalSeconds
+            if ( $TimeOutTime -gt $Global:STOP_TIMEOUT ) {
+                $isTimeOut = $true
+                Write-LogWarn "WARNING: Timeout waiting Snapmirror idle on destination relationship [$mySecondaryVserver]"
+                $Return = $false
+            }
     	}
-
     	Write-Log "[$mySecondaryVserver] All Snapmirror transfers terminated"
         Write-LogDebug "wait_snapmirror_dr[$myPrimaryVserver]: end"
     	return $Return 
@@ -11805,10 +11814,10 @@ Function update_vserver_dr (
 	if ( ( check_update_vserver -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver ) -ne $True ) { Write-LogError "ERROR: Failed check update vserver" ; return $False }
  
 	Write-LogDebug "update_vserver_dr: Update policy"
-	if ( ( create_update_policy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver )  -ne $True ) {
+	<# if ( ( create_update_policy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver )  -ne $True ) {
 		Write-LogError "ERROR: create_update_policy_dr failed" 
 		$Return = $False
-	}												  
+	} #>												  
 																																																					
 	if ( $myDataAggr -or $aggrMatchRegEx ) {
 		Write-LogDebug "update_vserver_dr: Create required new volumes $mySecondaryController Vserver $Vserver"
