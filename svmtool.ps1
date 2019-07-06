@@ -441,6 +441,7 @@
                     Introduce RestoreObject to allow restores only part of SVM configuration: LIFs, Volumes, Exports, Shares, Quotas, Users (still is progress)
         - 0.2.6 :   Add option to skip anti virus check completely, bugfixes (acl encoding, export policy, ...) 
         - 0.2.7 :   Fix wait_snapmirror_dr
+        - 0.2.8 :   Fix import-module svmtool
 #>
 [CmdletBinding(HelpURI = "https://github.com/oliviermasson/svmtool", DefaultParameterSetName = "ListInstance")]
 Param (
@@ -932,8 +933,8 @@ $Global:MIN_MINOR = 5
 $Global:MIN_BUILD = 0
 $Global:MIN_REVISION = 0
 #############################################################################################
-$Global:RELEASE = "0.2.7"
-$Global:SCRIPT_RELEASE = "0.1.12"
+$Global:RELEASE = "0.2.8"
+$Global:SCRIPT_RELEASE = "0.1.13"
 $Global:BASEDIR = 'C:\Scripts\SVMTOOL'
 $Global:SVMTOOL_DB_DEFAULT = $Global:BASEDIR
 $Global:CONFBASEDIR = $BASEDIR + '\etc\'
@@ -1130,7 +1131,7 @@ if ( $Version ) {
     if ($ModuleVersion -eq $null) {
         $path = (Get-Variable -Name PSCommandPath).Value
         $path = Split-Path $path
-        $module = Import-Module $path -PassThru
+        $module = Import-Module $($path+"\svmtool") -PassThru
         if ($module -ne $null) {
             $ModuleVersion = (Get-Module -Name svmtool).Version
             $ModuleVersion = $ModuleVersion.ToString()
