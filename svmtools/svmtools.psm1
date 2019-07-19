@@ -5,7 +5,7 @@
     This module contains several functions to manage SVMDR, Backup and Restore Configuration...
 .NOTES
     Authors  : Olivier Masson, Jerome Blanchet, Mirko Van Colen
-    Release  : July 7th, 2019
+    Release  : July 19th, 2019
 
 #>
 
@@ -1870,7 +1870,7 @@ Function create_update_firewallpolicy_dr(
 }
 
 #############################################################################################
-# create_update_usermapping_dr
+# get_vserver_clone used by show_dr
 Function get_vserver_clone(
     [NetApp.Ontapi.Filer.C.NcController] $mySecondaryController,
     [string] $DestinationVserver) 
@@ -4717,7 +4717,7 @@ Catch {
 	foreach($lif in $lifsdest){
         $lif_name=$lif.InterfaceName
 		$lif_ip=$lif.Address
-		if( ($lif_ip -notin $IPsource) -or ($Global:RESTORE_ORIGINAL -eq $True) ){
+		if( ($lif_ip -notin $IPsource) -or ($Global:RESTORE_ORIGINAL -eq $True -or $Global:ForceCloneOriginal.IsPresent) ){
 			Write-LogDebug "[$workOn] Set LIF [$lif_name] into state [$state]"
 			$ret=Set-NcNetInterface -Name $lif_name -Vserver $mySecondaryVserver -Controller $mySecondaryController -AdministrativeStatus $state -ErrorVariable ErrorVar
 			if($? -ne $true){
@@ -4729,7 +4729,7 @@ Catch {
             $SameIP+=$lif_ip
         }
     }
-    if( ($set -eq $false) -and ($SameIP.count -ge 1) -and ($Global:RESTORE_ORIGINAL -ne $True) ){
+    if( ($set -eq $false) -and ($SameIP.count -ge 1) -and ($Global:RESTORE_ORIGINAL -ne $True -and ( -not ($Global:ForceCloneOriginal.IsPresent)))){
         Write-Warning "You need to change IP address on secondary [$SameIP], which is in conflict with source IP address"
     }
     if($AfterMigrate.IsPresent){
@@ -5025,7 +5025,7 @@ Try {
                 #Save_Volume_To_Selectvolumedb $myPrimaryController $mySecondaryController $myPrimaryVserver $mySecondaryVserver $PrimaryVolName  
             } 
         }
-        Write-Log "[$workOn] Create Flexclone [$DestVolName] from SVM [$DestinationVserverDR]"
+        Write-Log "[$workOn] Create Flexclone [$DestVolName] from SVM [$DestinationVserverDR] into SVM [$mySecondaryVserver]"
 								  
         Write-LogDebug "Get-NcSnapshot -Controller $mySecondaryController -Query @{Vserver=$DestinationVserverDR;Volume=$DestVolName;Dependency=`"`!snapmirror`"}"
         $SnapshotList=Get-NcSnapshot -Controller $mySecondaryController -Query @{Vserver=$DestinationVserverDR;Volume=$DestVolName} -ErrorVariable ErrorVar
@@ -6541,10 +6541,10 @@ Try {
     Write-Log "[$workOn] VFR mode is set to [$vfrEnable]"
     if($vfrEnable -eq $True){
         if($Global:XDPPolicy -ne ""){
-            Write-LogDebug "Snapmirror Policy set to [$($Global:XDPPolicy)]"
+            Write-Log "[$workOn] Snapmirror Policy set to [$($Global:XDPPolicy)]"
             $SnapmirrorPolicy=$Global:XDPPolicy
         }else{
-            Write-LogDebug "Snapmirror Policy set to default [MirrorAllSnapshots]"
+            Write-Log "[$workOn] Snapmirror Policy set to default [MirrorAllSnapshots]"
             $SnapmirrorPolicy="MirrorAllSnapshots"    
         }
     }
@@ -6767,62 +6767,67 @@ Try {
 					$Return = $True 
 				}
 			}elseif ( ( $relation.MirrorState -eq "snapmirrored" ) -and ( $relation.RelationshipStatus -in $("idle","insync") )  ) {
-                # need to change Snapmirror Policy
-                if( ( $Global:XDPPolicy -notin $("Sync","StrictSync") ) -and ( $relation.Policy -notin $("Sync","StrictSync") ) ){
-                    Write-Log "[$workOn] Relation [${myPrimaryController}:${myPrimaryVserver}:${PrimaryVol}] ---> [${mySecondaryController}:${mySecondaryVserver}:${PrimaryVol}] with Policy [$($relation.Policy)] will be modified to Policy [$($Global:XDPPolicy)]"
-                    if( ( $Global:XDPPolicy -ne "Sync" ) -and ( $Global:XDPPolicy -ne "StrictSync" ) ){
-                        # add code here to convert any async policy to any other async policy
-                        Write-LogDebug "Switch an Async Policy to another Async Policy"
-                        Write-LogDebug "Set-NcSnapmirror -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -Controller $mySecondaryController -Policy $($Global:XDPPolicy)"
-                        $ret=Set-NcSnapmirror -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -Controller $mySecondaryController -Policy $Global:XDPPolicy -ErrorVariable ErrorVar
-                        if($? -ne $True){
-                            Write-LogWarn "Failed to change SnapMirror Policy for relationship to [${mySecondaryController}:${mySecondaryVserver}:${PrimaryVol}] reason [$ErrorVar]"
-                        }
-                    }else{
-                        # add code here to convert snapmirror async to sync
-                        Write-LogDebug "Switch from any Policy to another"
-                        if($relation.Policy -notin $("Sync","StrictSync")){
-                            Write-LogDebug "From Async to Sync"
-                            $ConvertType="Async2Sync"
-                        }elseif($relation.Policy -in ("Sync","StrictSync") -and $Global:XDPPolicy -in ("Sync","StrictSync")){
-                            Write-LogDebug "From Sync to Sync"
-                            $ConvertType="Sync2Sync"
+                if($Global:XDPPolicy.length -gt 1){
+                    Write-Log "XDPPolicy supplied with [$Global:XDPPolicy]. Will update SnapMirror relationships"
+                    # need to change Snapmirror Policy
+                    if( ( $Global:XDPPolicy -notin $("Sync","StrictSync") ) -and ( $relation.Policy -notin $("Sync","StrictSync") ) ){
+                        Write-Log "[$workOn] Relation [${myPrimaryController}:${myPrimaryVserver}:${PrimaryVol}] ---> [${mySecondaryController}:${mySecondaryVserver}:${PrimaryVol}] with Policy [$($relation.Policy)] will be modified to Policy [$($Global:XDPPolicy)]"
+                        if( ( $Global:XDPPolicy -ne "Sync" ) -and ( $Global:XDPPolicy -ne "StrictSync" ) ){
+                            # add code here to convert any async policy to any other async policy
+                            Write-LogDebug "Switch an Async Policy to another Async Policy"
+                            Write-LogDebug "Set-NcSnapmirror -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -Controller $mySecondaryController -Policy $($Global:XDPPolicy)"
+                            $ret=Set-NcSnapmirror -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -Controller $mySecondaryController -Policy $Global:XDPPolicy -ErrorVariable ErrorVar
+                            if($? -ne $True){
+                                Write-LogWarn "Failed to change SnapMirror Policy for relationship to [${mySecondaryController}:${mySecondaryVserver}:${PrimaryVol}] reason [$ErrorVar]"
+                            }
                         }else{
-                            Write-LogDebug "From Sync to Async"
-                            $ConvertType="Sync2Async"
+                            # add code here to convert snapmirror async to sync
+                            Write-LogDebug "Switch from any Policy to another"
+                            if($relation.Policy -notin $("Sync","StrictSync")){
+                                Write-LogDebug "From Async to Sync"
+                                $ConvertType="Async2Sync"
+                            }elseif($relation.Policy -in ("Sync","StrictSync") -and $Global:XDPPolicy -in ("Sync","StrictSync")){
+                                Write-LogDebug "From Sync to Sync"
+                                $ConvertType="Sync2Sync"
+                            }else{
+                                Write-LogDebug "From Sync to Async"
+                                $ConvertType="Sync2Async"
+                            }
+                            Write-LogDebug "Invoke-NcSnapmirrorQuiesce -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol `
+                            -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -Controller $mySecondaryController"
+                            $ret=Invoke-NcSnapmirrorQuiesce -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol `
+                            -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -Controller $mySecondaryController -ErrorVariable ErrorVar -Confirm:$False
+                            if($? -ne $True){$Return=$False; Throw "ERROR : Failed to quiesce destination relationship [${mySecondaryController}:${mySecondaryVserver}:${PrimaryVol}] reason [$ErrorVar]"}
+                            $ret=wait_snapmirror_dr_status -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -DestinationVserver $mySecondaryVserver -PrimaryVolumeName $SourceVolume -Status "quiesced" -MirrorState "snapmirrored"
+                            if($ret -eq $false){
+                                $Return=$False
+                                Throw "ERROR : Failed to quiesce a snapmirror relationship. Increase timeout?"
+                            }
+                            Write-LogDebug "Remove-NcSnapmirror -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol `
+                            -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -Controller $mySecondaryController"
+                            $ret=Remove-NcSnapmirror -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol `
+                            -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -Controller $mySecondaryController -ErrorVariable ErrorVar -Confirm:$False
+                            if($? -ne $True){$Return=$False; Throw "ERROR : Failed to delete destination relationship [${mySecondaryController}:${mySecondaryVserver}:${PrimaryVol}] reason [$ErrorVar]"}
+                            Write-LogDebug "Invoke-NcSnapmirrorRelease -RelationshipInfoOnly -Controller $myPrimaryController -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol `
+                            -DestinationCluster $mySecondaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol"
+                            $ret=Invoke-NcSnapmirrorRelease -RelationshipInfoOnly -Controller $myPrimaryController -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol `
+                            -DestinationCluster $mySecondaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -ErrorVariable ErrorVar -Confirm:$False
+                            if($? -ne $True){$Return=$False; Throw "ERROR : Failed to release destination relationship [${mySecondaryController}:${mySecondaryVserver}:${PrimaryVol}] reason [$ErrorVar]"}
+                            Write-LogDebug "New-NcSnapmirror -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVolName `
+                            -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVolName -type vault -policy $Global:XDPPolicy -Controller $mySecondaryController"
+                            $ret=New-NcSnapmirror -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVolName `
+                            -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVolName -type vault -policy $Global:XDPPolicy -Controller $mySecondaryController  -ErrorVariable ErrorVar 
+                            if($? -ne $True){$Return=$False; Throw "ERROR : Failed to create destination relationship [${mySecondaryController}:${mySecondaryVserver}:${PrimaryVol}] reason [$ErrorVar]"}
+                            Write-LogDebug "Invoke-NcSnapmirrorResync -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol `
+                            -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -Controller $mySecondaryController"
+                            $relation=Invoke-NcSnapmirrorResync -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol `
+                            -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -Controller $mySecondaryController  -ErrorVariable ErrorVar
+                            if($? -ne $True){$Return=$False; Throw "ERROR : Failed to resync destination relationship [${mySecondaryController}:${mySecondaryVserver}:${PrimaryVol}] reason [$ErrorVar]"}
                         }
-                        Write-LogDebug "Invoke-NcSnapmirrorQuiesce -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol `
-                        -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -Controller $mySecondaryController"
-                        $ret=Invoke-NcSnapmirrorQuiesce -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol `
-                        -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -Controller $mySecondaryController -ErrorVariable ErrorVar -Confirm:$False
-                        if($? -ne $True){$Return=$False; Throw "ERROR : Failed to quiesce destination relationship [${mySecondaryController}:${mySecondaryVserver}:${PrimaryVol}] reason [$ErrorVar]"}
-                        $ret=wait_snapmirror_dr_status -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -DestinationVserver $mySecondaryVserver -PrimaryVolumeName $SourceVolume -Status "quiesced" -MirrorState "snapmirrored"
-                        if($ret -eq $false){
-                            $Return=$False
-                            Throw "ERROR : Failed to quiesce a snapmirror relationship. Increase timeout?"
-                        }
-                        Write-LogDebug "Remove-NcSnapmirror -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol `
-                        -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -Controller $mySecondaryController"
-                        $ret=Remove-NcSnapmirror -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol `
-                        -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -Controller $mySecondaryController -ErrorVariable ErrorVar -Confirm:$False
-                        if($? -ne $True){$Return=$False; Throw "ERROR : Failed to delete destination relationship [${mySecondaryController}:${mySecondaryVserver}:${PrimaryVol}] reason [$ErrorVar]"}
-                        Write-LogDebug "Invoke-NcSnapmirrorRelease -RelationshipInfoOnly -Controller $myPrimaryController -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol `
-                        -DestinationCluster $mySecondaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol"
-                        $ret=Invoke-NcSnapmirrorRelease -RelationshipInfoOnly -Controller $myPrimaryController -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol `
-                        -DestinationCluster $mySecondaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -ErrorVariable ErrorVar -Confirm:$False
-                        if($? -ne $True){$Return=$False; Throw "ERROR : Failed to release destination relationship [${mySecondaryController}:${mySecondaryVserver}:${PrimaryVol}] reason [$ErrorVar]"}
-                        Write-LogDebug "New-NcSnapmirror -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVolName `
-                        -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVolName -type vault -policy $Global:XDPPolicy -Controller $mySecondaryController"
-                        $ret=New-NcSnapmirror -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVolName `
-                        -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVolName -type vault -policy $Global:XDPPolicy -Controller $mySecondaryController  -ErrorVariable ErrorVar 
-                        if($? -ne $True){$Return=$False; Throw "ERROR : Failed to create destination relationship [${mySecondaryController}:${mySecondaryVserver}:${PrimaryVol}] reason [$ErrorVar]"}
-                        Write-LogDebug "Invoke-NcSnapmirrorResync -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol `
-                        -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -Controller $mySecondaryController"
-                        $relation=Invoke-NcSnapmirrorResync -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol `
-                        -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -Controller $mySecondaryController  -ErrorVariable ErrorVar
-                        if($? -ne $True){$Return=$False; Throw "ERROR : Failed to resync destination relationship [${mySecondaryController}:${mySecondaryVserver}:${PrimaryVol}] reason [$ErrorVar]"}
-                    }
-                }    
+                    } 
+                }else{
+                    Write-LogDebug "No XDPPolicy supplied, so no modification of SnapMirror Policy will occurs"
+                }   
             }
 		}
 	}	
@@ -6922,12 +6927,12 @@ Catch {
 
 #############################################################################################
 Function create_lif_dr(
-	[NetApp.Ontapi.Filer.C.NcController] $myPrimaryController,
-	[NetApp.Ontapi.Filer.C.NcController] $mySecondaryController,
-	[string] $myPrimaryVserver,
-    [string] $mySecondaryVserver,
+	[NetApp.Ontapi.Filer.C.NcController]$myPrimaryController,
+	[NetApp.Ontapi.Filer.C.NcController]$mySecondaryController,
+	[string]$myPrimaryVserver,
+    [string]$mySecondaryVserver,
     [string]$workOn=$mySecondaryVserver,
-    [switch] $UpdateLif,
+    [switch]$UpdateLif,
     [bool]$Backup,
     [bool]$Restore,
     [switch]$ForClone,
@@ -7066,6 +7071,7 @@ Try {
                 Throw "ERROR: neither Get-NcNetRoute.json or Get-NcNetRoutingGroupRoute.json are available in backup folder for [$mySecondaryVserver]"        
             }       
         }
+        # LIF Treatment
         if($Backup -eq $False){
             $SecondaryInterface  = Get-NcNetInterface -InterfaceName $PrimaryInterfaceName -VserverContext $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar 
             if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcNetInterface failed [$ErrorVar]" }
@@ -7076,7 +7082,12 @@ Try {
                 while ( ( $ANS1 -eq 'y' ) -and ( $ANS2 -eq 'n' ) ) 
                 {
                     $LIF = '[' + $PrimaryInterfaceName + '] [' + $PrimaryAddress + '] [' + $PrimaryNetMask + '] [' + $PrimaryGateway + '] [' + $PrimaryCurrentNode + '] [' + $PrimaryCurrentPort + ']'  
-                    $ANS1 = Read-HostOptions -question "[$mySecondaryVserver] Do you want to create the DRP LIF $LIF on cluster [$mySecondaryController] ?" -options "y/n" -default "y"
+                    if( $Global:ForceCloneOriginal.IsPresent ){
+                        $autoselect=$True
+                    }else{
+                        $autoselect=$False
+                    }
+                    $ANS1 = Read-HostOptions -question "[$mySecondaryVserver] Do you want to create the DRP LIF $LIF on cluster [$mySecondaryController] ?" -options "y/n" -default "y" -autoSelect:$autoselect
                     if ( $ANS1 -eq 'y' ) 
                     {
                         $BackupOfGateway=""
@@ -7089,11 +7100,15 @@ Try {
                             $PrimaryGateway = ""
                             Write-LogWarn "[$workOn] Working in non interactive for clone - creating APIPA address [$PrimaryAddress]"
                         }
-
-                        $myIpAddr=ask_IpAddr_from_cli -myIpAddr $PrimaryAddress -workOn $workOn
-                        $myNetMask=ask_NetMask_from_cli -myNetMask $PrimaryNetMask -workOn $workOn
-                        $myGateway=ask_gateway_from_cli -myGateway $PrimaryGateway -workOn $workOn
-                        
+                        if( -not ($Global:ForceCloneOriginal.IsPresent)){
+                            $myIpAddr=ask_IpAddr_from_cli -myIpAddr $PrimaryAddress -workOn $workOn
+                            $myNetMask=ask_NetMask_from_cli -myNetMask $PrimaryNetMask -workOn $workOn
+                            $myGateway=ask_gateway_from_cli -myGateway $PrimaryGateway -workOn $workOn
+                        }else{
+                            $myIpAddr = $PrimaryAddress  
+                            $myNetMask = $PrimaryNetMask
+                            $myGateway = $PrimaryGateway
+                        }
                         if($nodeMatchRegEx -ne ""){
                             $nodeRegEx=replace_regex_groupmatches -string $PrimaryCurrentNode -regex $nodeMatchRegEx -replacewith "(.*)"
                         }else{
@@ -7107,6 +7122,11 @@ Try {
                             if ( $ANS2 -eq 'y' ) 
                             {
                                 Write-Log "[$workOn] Create the LIF $LIF"
+                                if( -not ($Global:ForceCloneOriginal.IsPresent) ){
+                                    Write-LogDebug "Dns Domain is only set during Migrate, ActivateDR, ReActivate or CloneVserverDR with ForceCloneOriginal"
+                                    Write-LogDebug "Dns Domain will remain empty for temporary LIF"
+                                    $PrimaryDnsDomainName=""    
+                                }
                                 if ( ( $PrimaryFirewallPolicy -eq "mgmt" ) -and ( $PrimaryDataProtocols -eq "none" ) ) 
                                 {
                                     Write-Log "[$workOn] LIF [$LIF] is the Administration LIF it must be in Administrative up status"
@@ -8790,12 +8810,17 @@ Try {
             }            
             $ADCred = get_local_cred ($SecondaryDomain)
 
-            if($ForClone -eq $True){
-                $SecondaryCifsServer = $mySecondaryVserver
-                if($SecondaryCifsServer.length -gt 15){
-                    $SecondaryCifsServer=$SecondaryCifsServer -replace "_clone\.","_c."
+            if( $ForClone -eq $True ){
+                if ( $Global:ForceCloneOriginal.IsPresent ){
+                    Write-LogDebug "Force Clone CIFS Server Identity to Production Identity"
+                    $SecondaryCifsServer=$PrimaryCifsServerInfos.CifsServer    
+                }else{
+                    $SecondaryCifsServer = $mySecondaryVserver
                     if($SecondaryCifsServer.length -gt 15){
-                        $SecondaryCifsServer=$SecondaryCifsServer.Substring($SecondaryCifsServer.length-15,15)    
+                        $SecondaryCifsServer=$SecondaryCifsServer -replace "_clone\.","_c."
+                        if($SecondaryCifsServer.length -gt 15){
+                            $SecondaryCifsServer=$SecondaryCifsServer.Substring($SecondaryCifsServer.length-15,15)    
+                        }
                     }
                 }
                 Write-Log "[$workOn] Clone CIFS server name set to [$SecondaryCifsServer]"   
@@ -8852,6 +8877,11 @@ Try {
 			        if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcNetInterface failed [$ErrorVar]" }
 			        if ( $SecondaryInterface -eq $null ) 
 			        {
+                        if( -not ($Global:ForceCloneOriginal.IsPresent) ){
+                            Write-LogDebug "Dns Domain is only set during Migrate, ActivateDR, ReActivate or CloneVserverDR with ForceCloneOriginal"
+                            Write-LogDebug "Dns Domain will remain empty for temporary LIF"
+                            $InterfaceMasterDnsDomainName=""    
+                        }
 				        Write-Log "[$workOn] Create the LIF [$TempInterfaceName] (cloning from $SecondaryCifsLifMaster)"
 				        Write-Log "[$workOn] LIF [$TempInterfaceName] is the Temp Cifs LIF, it must be in Administrative up status"
 				        Write-LogDebug "New-NcNetInterface -Name $TempInterfaceName -Vserver $mySecondaryVserver -Role $InterfaceMasterRole -Node $InterfaceMasterCurrentNode -Port $InterfaceMasterCurrentPort -DataProtocols $InterfaceMasterDataProtocols -FirewallPolicy $InterfaceMasterFirewallPolicy -Address $TempIpAddress -Netmask $InterfaceMasterNetMask -DnsDomain $InterfaceMasterDnsDomainName -AdministrativeStatus up -AutoRevert $InterfaceMasterIsAutoRevert -Controller $mySecondaryController"
@@ -8883,7 +8913,7 @@ Try {
                 }
                 else
                 {
-                    Write-LogDebug "create_update_CIFS_server_dr : LIF with protocol exist but is down"
+                    Write-LogDebug "create_update_CIFS_server_dr : LIF with protocol exist but it's down"
                     $myInterfacesList=$SecondaryInterfaceList | Where-Object {$_.OpStatus -eq "down" -and $_.DataProtocols -match "cifs"}
                     if($myInterfacesList -eq $null){
                         Write-Log "[$workOn] No CIFS LIF available on DR vserver"
@@ -8903,7 +8933,7 @@ Try {
                             $PrimaryInterfaceName=$PrimaryInterface.InterfaceName
                             $PrimaryAddress=$PrimaryInterface.Address
                             if($PrimaryAddress -eq $myInterfaceIP){
-                                if($Global:RESTORE_ORIGINAL -ne $True){
+                                if( ($Global:RESTORE_ORIGINAL -ne $True) -and (-not $Global:ForceCloneOriginal.IsPresent) ){
                                     $duplicateIP=$True
                                     break
                                 }  
@@ -8942,7 +8972,7 @@ Try {
                     -VserverContext $mySecondaryVserver -Controller $mySecondaryController -Confirm:$False -ErrorVariable ErrorVar
                     if($? -ne $True){Throw "ERROR: Failed to set CIFS security on [$mySecondaryVserver] reason [$ErrorVar]"}
                     
-                    if($Global:RESTORE_ORIGINAL -eq $True){
+                    if( ($Global:RESTORE_ORIGINAL -eq $True) -or ($Global:ForceCloneOriginal.IsPresent) ){
                         $CIFSAdminState="up"
                     }else{
                         $CIFSAdminState="down"
@@ -8960,7 +8990,7 @@ Try {
                         if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Remove-NcNetInterface failed [$ErrorVar]" ; }
                     }
 
-                    if( ($myInterfaceName.Length -gt 0) -and ($Global:RESTORE_ORIGINAL -eq $False) )
+                    if( ($myInterfaceName.Length -gt 0) -and ($Global:RESTORE_ORIGINAL -eq $False -and ( -not ($Global:ForceCloneOriginal.IsPresent))) )
                     {
                         Write-logDebug "Set-NcNetInterface -Name $myInterfaceName -Vserver $mySecondaryVserver -AdministrativeStatus down -Controller $mySecondaryController"
                         $out=Set-NcNetInterface -Name $myInterfaceName -Vserver $mySecondaryVserver -AdministrativeStatus "down" -Controller $mySecondaryController  -ErrorVariable ErrorVar
@@ -9020,7 +9050,8 @@ Function create_update_CIFS_shares_dr (
     [string] $mySecondaryVserver,
     [string]$workOn=$mySecondaryVserver,
     [bool]$Backup,
-    [bool]$Restore) {
+    [bool]$Restore,
+    [switch]$FromReactivate) {
 Try {
 	$Return=$True
     $RunBackup=$False
@@ -9533,12 +9564,13 @@ $request=@"
             }
         }
         
-        #if($WinSIDCompatible -eq $False){
-        if (($ret=set_all_lif -mySecondaryVserver $mySecondaryVserver -myPrimaryVserver $myPrimaryVserver -mySecondaryController $mySecondaryController  -myPrimaryController $myPrimaryController -state down) -ne $True ) {
-            Write-LogError "ERROR: Failed to set all lif up on [$mySecondaryVserver]"
-            clean_and_exit 1
+        if( -not ($FromReactivate.IsPresent) ){
+            Write-LogDebug "Not in a ReActivate process, so disable LIF on [$MySecondaryVserver]"
+            if (($ret=set_all_lif -mySecondaryVserver $mySecondaryVserver -myPrimaryVserver $myPrimaryVserver -mySecondaryController $mySecondaryController  -myPrimaryController $myPrimaryController -state down) -ne $True ) {
+                Write-LogError "ERROR: Failed to set all lif up on [$mySecondaryVserver]"
+                clean_and_exit 1
+            }
         }
-        #}
     }
     Write-LogDebug "create_update_CIFS_shares_dr[$myPrimaryVserver]: end"
 	return $True
@@ -10225,13 +10257,13 @@ function check_create_dir{
 
 #############################################################################################
 Function create_clonevserver_dr (
-    [NetApp.Ontapi.Filer.C.NcController] $myPrimaryController,
-    [NetApp.Ontapi.Filer.C.NcController] $mySecondaryController,
-	[string] $myPrimaryVserver,
-    [string] $mySecondaryVserver,
-    [string] $workOn=$mySecondaryVserver,
-    [string] $aggrMatchRegEx,
-    [string] $nodeMatchRegEx,
+    [NetApp.Ontapi.Filer.C.NcController]$myPrimaryController,
+    [NetApp.Ontapi.Filer.C.NcController]$mySecondaryController,
+	[string]$myPrimaryVserver,
+    [string]$mySecondaryVserver,
+    [string]$workOn=$mySecondaryVserver,
+    [string]$aggrMatchRegEx,
+    [string]$nodeMatchRegEx,
     [string]$TemporarySecondaryCifsIp,
     [string]$SecondaryCifsLifMaster,
     [string]$SecondaryCifsLifCustomVlan,
@@ -10543,7 +10575,7 @@ Try {
 	if ( ( $ret=create_snapmirror_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn -DDR $DDR -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create all snapmirror relations " ; $Return = $False }
 	if ( ( $ret=create_update_snap_policy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) {Write-LogError "ERROR: create_update_snap_policy_dr"}
 	if($Backup -eq $False -and $Restore -eq $False){
-        $ASK_WAIT=Read-HostOptions -question "[$mySecondaryVserver] Do you want to wait the end of snapmirror transfers and mount all volumes and map LUNs $mySecondaryVserver now ?" -options "y/n" -default "n"
+        $ASK_WAIT=Read-HostOptions -question "[$mySecondaryVserver] Do you want to wait the end of snapmirror transfers and mount all volumes and map LUNs on [$mySecondaryVserver] now ?" -options "y/n" -default "n"
     }else{
         $ASK_WAIT='y'
     }
@@ -11380,16 +11412,17 @@ try{
         if($LIFinformation -ne $null){
             $LIFaddress=$LIFinformation.Address
             $LIFnetmask=$LIFinformation.Netmask
+            $LIFdomain=$LIFinformation.DnsDomainName
             Write-Log "[$mySecondaryVserver] Set [$LIFname] down on [$myPrimaryVserver]"
-            Write-LogDebug "Set-NcNetInterface -Name $LIFname -AdministrativeStatus down -Vserver $myPrimaryVserver -Controller $myPrimaryController"
-            $out=Set-NcNetInterface -Name $LIFname -AdministrativeStatus down -Vserver $myPrimaryVserver -Controller $myPrimaryController  -ErrorVariable ErrorVar
+            Write-LogDebug "Set-NcNetInterface -Name $LIFname -AdministrativeStatus down -DnsDomain temp.domain -Vserver $myPrimaryVserver -Controller $myPrimaryController"
+            $out=Set-NcNetInterface -Name $LIFname -AdministrativeStatus down DnsDomain "temp.domain" -Vserver $myPrimaryVserver -Controller $myPrimaryController  -ErrorVariable ErrorVar
             if ( $? -ne $True ) 
             {
                 $Return = $False ; throw "ERROR: Set-NcNetInterface failed [$ErrorVar]"
             }
-            Write-Log "[$mySecondaryVserver] Set [$LIFname] up with address [$LIFaddress] and netmask [$LIFnetmask] on [$mySecondaryVserver]"
-            Write-LogDebug "Set-NcNetInterface -Name $LIFname -AdministrativeStatus up -Vserver $mySecondaryVserver -Controller $mySecondaryController"
-            $out=Set-NcNetInterface -Name $LIFname -Address $LIFaddress -Netmask $LIFnetmask -AdministrativeStatus up -Vserver $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar
+            Write-Log "[$mySecondaryVserver] Set [$LIFname] up with [$LIFaddress] [$LIFnetmask] [$LIFdomain] on [$mySecondaryVserver]"
+            Write-LogDebug "Set-NcNetInterface -Name $LIFname -DnsDomain $LIFdomain -AdministrativeStatus up -Vserver $mySecondaryVserver -Controller $mySecondaryController"
+            $out=Set-NcNetInterface -Name $LIFname -Address $LIFaddress -Netmask $LIFnetmask -DnsDomain $LIFdomain -AdministrativeStatus up -Vserver $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar
             if ( $? -ne $True )
             {
                 $Return = $False ; throw "ERROR: Set-NcNetInterface failed [$ErrorVar]"    
@@ -11586,12 +11619,13 @@ try{
             $UserFullname=$User.FullName
             if($PrimaryCifsServer -ne $SecondaryCifsServer){$UserName=$UserName -replace $PrimaryCifsServer,$SecondaryCifsServer}
             if($UserFullname.length -eq 0 -or $UserFullname.count -eq 0){$UserFullname=""}
+            Write-LogDebug "Work on [$UserName] [$UserDisabled] [$UserDescription] [$UserFullname] from Primary "
             if(($UserDescription -match "Built-in") -eq $True){
                 write-logdebug "Get-NcCifsLocalUser -VserverContext $mySecondaryVserver -controller $mySecondaryController"
                 $SecondaryBuiltin=Get-NcCifsLocalUser -VserverContext $mySecondaryVserver -controller $mySecondaryController -ErrorVariable ErrorVar | Where-Object {$_.Description -match "Built-in"}
                 if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcCifsLocalUser failed [$ErrorVar]" }
                 $UserName=$SecondaryBuiltin.UserName
-
+                Write-LogDebug "Work on [$UserName] from Secondary "
                 do{
                     $modok=$True
                     $password=get_pwd_from_cli -workOn $workOn -for "CIFS Local User" -name $Username -asSecure
@@ -11935,7 +11969,7 @@ Function update_vserver_dr (
 		Write-LogError "ERROR: create_update_ISCSI_dr failed" 
 		$Return = $False 
 	}
-	if ( ( create_update_CIFS_shares_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver ) -ne $True ) {
+	if ( ( create_update_CIFS_shares_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -FromReactivate ($FromReactivate.IsPresent) ) -ne $True ) {
 		Write-LogError "ERROR: create_update_CIFS_share failed" 
 		$Return = $False 
 	}
@@ -12300,7 +12334,7 @@ Function activate_vserver_dr (
 			if($? -ne $True){$Return = $False; throw "ERROR: failed to remove secondary CIFS server"}	 #>
 			$NeedCIFS=$True
 		}
-        # modify active LIF with primary settings
+        # modify active LIF oin secondary with primary settings
         Write-Log "[$currentPassiveVserver] Modify LIF"
 		if( ($ret=Set_LIF_from_JSON -ToNcController $NcCurrentPassiveCtrl -ToVserver $currentPassiveVserver -fromSrc) -eq $False ){
 			Throw "ERROR: Failed to set IP address on [$currentPassiveVserver]"	
@@ -13742,9 +13776,10 @@ Function Set_LIF_from_JSON (
                 $LIFname=$LIF.InterfaceName
                 $Address=($NetList | where-object {$_.InterfaceName -eq $LIFname}).Address
                 $Netmask=($NetList | where-object {$_.InterfaceName -eq $LIFname}).Netmask
+                $DnsDomainName=($NetList | where-object {$_.InterfaceName -eq $LIFname}).DnsDomainName
                 Write-Log "[$ToVserver] Configure LIF [$LIFname] with [$Address] [$Netmask] [$AdminState]"
-                Write-LogDebug "Set-NcNetInterface -Name $LIFname -Vserver $ToVserver -Address $Address -Netmask $Netmask -AdministrativeStatus $AdminState -Controller $ToNcController"
-                $ret=Set-NcNetInterface -Name $LIFname -Vserver $ToVserver -Address $Address -Netmask $Netmask -AdministrativeStatus $AdminState -Controller $ToNcController -ErrorVariable ErrorVar
+                Write-LogDebug "Set-NcNetInterface -Name $LIFname -Vserver $ToVserver -Address $Address -Netmask $Netmask -DnsDomain $DnsDomainName -AdministrativeStatus $AdminState -Controller $ToNcController"
+                $ret=Set-NcNetInterface -Name $LIFname -Vserver $ToVserver -Address $Address -Netmask $Netmask -DnsDomain $DnsDomainName -AdministrativeStatus $AdminState -Controller $ToNcController -ErrorVariable ErrorVar
                 if($? -ne $True){
                     throw "ERROR: Failed to configure LIF [$LIFname] on [$ToVserver] reason [$ErrorVar]"
                 }

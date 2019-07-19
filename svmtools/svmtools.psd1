@@ -6,7 +6,7 @@
 # Generated on: 2018-06-07
 #
 # Update by : Olivier MASSON
-# Updated on : 2019-05-09
+# Updated on : 2019-07-19
 #
 # Version Control :
 #   1.0.4 : Initial version
@@ -48,14 +48,17 @@
 #           Add support for Data replication with Sync and StrictSync Policy
 #           Automatic conversion of Async to Sync relationships and vice versa
 #           Introduce RestoreObject to allow restores only part of SVM configuration: LIFs, Volumes, Exports, Shares, Quotas (still is progress)
-#   1.2.5 : Fix wait_snapmirror_dr       
+#   1.2.5 : Fix wait_snapmirror_dr  
+#   1.2.6 : Introduce ForceCloneOriginal option
+#           Fix for XDPPolicy
+#           Change replication of DnsDomain for LIF, now DnsDomain is only updated on Destination with Migrate, ActivateDR, CloneVserverDR with ForceCloneOriginal, ReActivate
 @{
 
     # Script module or binary module file associated with this manifest.
     RootModule        = '.\svmtools.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '1.2.5'
+    ModuleVersion     = '1.2.6'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()

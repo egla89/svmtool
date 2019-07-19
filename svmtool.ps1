@@ -3,7 +3,7 @@
 	The svmdr script allows to manage DR relationship at SVM level
 	It also help to Backup & Restore SVM configuration
 .DESCRIPTION
-	This script deploy tools to:
+	This script deploys tools to:
 	creates and manages Disaster Recovery SVM for ONTAP cluster
 	Backup & Restore full configuration settings of an SVM
 .PARAMETER Vserver
@@ -19,7 +19,7 @@
     Used only with ConfigureDR, UpdateDR, UpdateReverse, CloneDR options
 .PARAMETER MirrorSchedule
     Allows to set a SnapMirror automatic update schedule for Source to DR relationship 
-    When used with ConfigureDR and UpdateDr the default schedule is "hourly" (for backwards compatibility)
+    When used with ConfigureDR and UpdateDR the default schedule is "hourly" (for backwards compatibility)
     When used with ConfigureDR and UpdateDR you can use "none" to omit the schedule
 .PARAMETER MirrorScheduleReverse
     Optional argument
@@ -269,7 +269,12 @@
     Will automatically run in NonInteractive Mode
 .PARAMETER RW
 	Only in Restore mode, this option will allow to create RW volume instead of default DP volume
-	This cas be used when you want to restore/clone an SVM conf, but don't need to or can't restore data back through SnapMirror
+    This cas be used when you want to restore/clone an SVM conf, but don't need to or can't restore data back through SnapMirror
+.PARAMETER ForceCloneOriginal
+    Only during creation of a Clone DR, this switch parameter allow to set on then Clone same identity as Production
+    This is only possible if Clone and Production will run is two completely isolated IPspace or Site with network isolation
+    Will automatially set Production IP address on Cloned LIF
+    Will automaticaly set Production CIFS server name on Cloned CIFS server
 .INPUTS
     None. You cannot pipe objects to this script
 .OUTPUTS
@@ -357,7 +362,7 @@
 	or because you only need to recreate the "envelop" fo the SVM (to clone an environment by example), just add -RW to the command line
 	In that case, all volumes will be restored as Read/Write (RW) volume.
 .EXAMPLE
-	svmtool.ps1 -Instance <instance name> -Vserver <vserver source name> -CloneDR [-DataAggr <default data aggregate name>] [-RootAggr] [-DefaultPass]
+	svmtool.ps1 -Instance <instance name> -Vserver <vserver source name> -CloneDR [-DataAggr <default data aggregate name>] [-RootAggr] [-DefaultPass] [-ForceCloneOriginal]
 
 	Create a temporary Clone Vserver on destination cluster
 	Clone all destinations volumes (DP) into this cloned vserver as Read/Write volume (RW)
@@ -628,6 +633,9 @@ Param (
 
     [Parameter(Mandatory = $false, ParameterSetName = 'ConfigureDR')]
     [switch]$DRfromDR,
+
+    [Parameter(Mandatory = $false, ParameterSetName = 'CloneDR')]
+    [switch]$ForceCloneOriginal,
 
     [Parameter(Mandatory = $false, ParameterSetName = 'ConfigureDR')]
     [Parameter(Mandatory = $false, ParameterSetName = 'UpdateDR')] 
@@ -964,6 +972,7 @@ $Global:ActiveDirectoryCredentials = $ActiveDirectoryCredentials
 $Global:DefaultLDAPCredentials = $DefaultLDAPCredentials
 $Global:ForceClean = $ForceClean
 $Global:SkipVscanFpolicy = $SkipVscanFpolicy
+$Global:ForceCloneOriginal = $ForceCloneOriginal
 $Global:BACKUPALLSVM = $False
 $Global:NumberOfLogicalProcessor = (Get-WmiObject Win32_Processor).NumberOfLogicalProcessors
 if ($Global:NumberOfLogicalProcessor -lt 4) {
@@ -2087,12 +2096,12 @@ if ( $ConfigureDR ) {
     }
     $DestVserver = Get-NcVserver -Vserver $VserverDR -Controller $NcSecondaryCtrl -ErrorVariable ErrorVar
 
-    if ( ( $XDPPolicy -ne "" ) -and ( $XDPPolicy -ne "MirrorAllSnapshots" ) ) {
-        $ret = Get-NcSnapmirrorPolicy -Name $XDPPolicy -Controller $NcSecondaryCtrl -ErrorVariable ErrorVar
+    if ( ( $Global:XDPPolicy -ne "" ) -and ( $Global:XDPPolicy -ne "MirrorAllSnapshots" ) ) {
+        $ret = Get-NcSnapmirrorPolicy -Name $Global:XDPPolicy -Controller $NcSecondaryCtrl -ErrorVariable ErrorVar
         if ( $? -ne $True -or $ret.count -eq 0 ) {
-            Write-LogDebug "XDPPolicy [$XDPPolicy] does not exist on [$SECONDARY_CLUSTER]. Will use MirrorAllSnapshots as default Policy"
-            Write-Warning "XDPPolicy [$XDPPolicy] does not exist on [$SECONDARY_CLUSTER]. Will use [MirrorAllSnapshots] as default Policy for all XDP relationships"
-            $Global:XDPPolicy = "MirrorAllSnapshots"
+            Write-LogDebug "XDPPolicy [$Global:XDPPolicy] does not exist on [$SECONDARY_CLUSTER]. Will use MirrorAllSnapshots as default Policy"
+            Write-Warning "XDPPolicy [$Global:XDPPolicy] does not exist on [$SECONDARY_CLUSTER]. Will use [MirrorAllSnapshots] as default Policy for all XDP relationships"
+            $Global:XDPPolicy = ""
         }
     }
     if ( $MirrorSchedule -ne "" -and $MirrorSchedule -ne "none") {
@@ -2109,6 +2118,7 @@ if ( $ConfigureDR ) {
     }
     # no schedule if Policy Sync or StrictSync is chosen
     if ( ( $Global:XDPPolicy -ne "") -and ( $Global:XDPPolicy -in $("Sync","StrictSync") ) ) {
+        Write-Log "Reset MirrorSchedule for Sync or StrictSync relationships"
         $Global:MirrorSchedule = "none"    
     }
     if ( $? -ne $True ) {
@@ -2239,11 +2249,6 @@ if ($Migrate) {
             Write-LogError "ERROR: check_cluster_peer failed"
             clean_and_exit 1
         }
-
-        # already managed inside next update_vserver_dr
-        #if ( ( $ret = update_cifs_usergroup -myPrimaryController $NcPrimaryCtrl -mySecondaryController $NcSecondaryCtrl -myPrimaryVserver $Vserver -mySecondaryVserver $VserverDR -NoInteractive) -ne $True ) {
-        #    Write-LogError "ERROR: update_cifs_usergroup failed"   
-        #}
 
         # This will set $Global:NEED_CIFS_SERVER
         $ret=check_update_CIFS_server_dr -myPrimaryController $NcPrimaryCtrl -mySecondaryController $NcSecondaryCtrl -myPrimaryVserver $Vserver -mySecondaryVserver $VserverDR
@@ -2606,6 +2611,10 @@ if ( $CloneDR ) {
         $ListCloneVserver = $ListCloneVserver | Sort-Object
         $newNumber = ([Int]($ListCloneVserver[-1].Vserver.split(".")[-1])) + 1
         $CloneVserverDR += $("." + $newNumber)	
+        if($Global:ForceCloneOriginal.IsPresent){
+            Write-LogError "ERROR: ForceCloneOriginal can only be used if no clone exists. Delete your clones and restart the command"
+            clean_and_exit 0
+        }
     }
     Write-Log "Create Clone SVM [$CloneVserverDR]"
     if ( ( $ret = create_clonevserver_dr -myPrimaryController $NcPrimaryCtrl -mySecondaryController $NcSecondaryCtrl -myPrimaryVserver $Vserver -mySecondaryVserver $CloneVserverDR -aggrMatchRegEx $AggrMatchRegex -nodeMatchRegEx $NodeMatchRegex -RootAggr $RootAggr -TemporarySecondaryCifsIp $TemporarySecondaryCifsIp -SecondaryCifsLifMaster $SecondaryCifsLifMaster -SecondaryCifsLifCustomVlan $SecondarCifsLifCustomVlan -ActiveDirectoryCustomOU $ActiveDirectoryCustomOU)[-1] -ne $True ) {
