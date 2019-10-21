@@ -52,13 +52,15 @@
 #   1.2.6 : Introduce ForceCloneOriginal option
 #           Fix for XDPPolicy
 #           Change replication of DnsDomain for LIF, now DnsDomain is only updated on Destination with Migrate, ActivateDR, CloneVserverDR with ForceCloneOriginal, ReActivate
+#   1.2.7 : Correct Restore_Object Shares
+#         : Add SnapmirrorType option to force DP relationship instead of XDP
 @{
 
     # Script module or binary module file associated with this manifest.
     RootModule        = '.\svmtools.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '1.2.6'
+    ModuleVersion     = '1.2.7'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()

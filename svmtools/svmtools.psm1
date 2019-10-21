@@ -5,7 +5,7 @@
     This module contains several functions to manage SVMDR, Backup and Restore Configuration...
 .NOTES
     Authors  : Olivier Masson, Jerome Blanchet, Mirko Van Colen
-    Release  : July 19th, 2019
+    Release  : October 21th, 2019
 
 #>
 
@@ -6537,7 +6537,12 @@ Try {
 	}
     if($PrimaryVersion.Major -ge 9 -and $SecondaryVersion.Major -ge 9){
 	    $vfrEnable=$True
-	}
+    }
+    if($Global:SnapmirrorType -eq "DP")
+    {
+        Write-Log "[$workon] User chose to force creation of DP relationship"
+        $vfrEnable=$False
+    }
     Write-Log "[$workOn] VFR mode is set to [$vfrEnable]"
     if($vfrEnable -eq $True){
         if($Global:XDPPolicy -ne ""){
@@ -6580,7 +6585,7 @@ Try {
 			Write-LogDebug "Get-NcSnapmirror -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVolName -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -VserverContext $mySecondaryVserver -Controller $mySecondaryController"
 			$relation=Get-NcSnapmirror -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVolName -SourceCluster $myPrimaryCluster -SourceVserver $myPrimaryVserver -SourceVolume $PrimaryVol -VserverContext $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar
 			if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcSnapmirror failed [$ErrorVar]" }
-			if ( $relation -eq $null ) 
+			if ( $null -eq $relation ) 
             {
                 if( ($Force -eq $False) -and ($DDR -eq $False) )
                 {
@@ -10120,7 +10125,6 @@ Function show_vserver_dr (
                 }else{
                     $RelationShipType="Async"
                 }
-                $LastTransferEndTimestamp=$relation.LastTransferEndTimestamp
                 $LagTime=$relation.LagTime
                 $SmSchedule=$relation.Schedule
                 $LagTimeDate=(Get-Date).AddSeconds(-$LagTime)
@@ -10129,7 +10133,11 @@ Function show_vserver_dr (
                 if ( $Schedule ) { $tmp_str = $tmp_str + "[$SmSchedule]"  }
                 if ($RelationHealth -eq $True)
                 {
-                    $rel=[string]::Format("{0,-7} {1,-55} --> {2,-58} {3,-3} {4,-20} {5,-10} {6,-15} {7,0}",$("["+$RelationShipType+"]"),$("["+$SourceLocation+"]"),`
+                    $rel=[string]::Format("{0,-7} {1,0} {2,-55} --> {3,0} {4,-55} {5,-3} {6,-20} {7,-10} {8,-15} {9,0}",`
+                    $("["+$RelationShipType+"]"),`
+                    $("["+$myPrimaryController+"]"),`
+                    $("["+$SourceLocation+"]"),`
+                    $("["+$mySecondaryController+"]"),`
                     $("["+$DestinationLocation+"]"),`
                     $("["+$Type+"]"),`
                     $("["+$RelationPolicy+"]"),`
@@ -10140,7 +10148,11 @@ Function show_vserver_dr (
                 }
                 else
                 {
-                    $rel=[string]::Format("{0,-7} {1,-55} --> {2,-58} {3,-3} {4,-20} {5,-10} {6,-15} [Not Healthy] {7,0}",$("["+$RelationShipType+"]"),$("["+$SourceLocation+"]"),`
+                    $rel=[string]::Format("{0,-7} {1,0} {2,-55} --> {3,0} {4,-55} {5,-3} {6,-20} {7,-10} {8,-15} [Not Healthy] {9,0}",`
+                    $("["+$RelationShipType+"]"),`
+                    $("["+$myPrimaryController+"]"),`
+                    $("["+$SourceLocation+"]"),`
+                    $("["+$mySecondaryController+"]"),`
                     $("["+$DestinationLocation+"]"),`
                     $("["+$Type+"]"),`
                     $("["+$RelationPolicy+"]"),`
@@ -10180,7 +10192,6 @@ Function show_vserver_dr (
                     $RelationShipType="Async"
                 }
                 $ReverseRelationHealth=$relation.IsHealthy
-                $LastTransferEndTimestamp=$relation.LastTransferEndTimestamp
                 $SmSchedule=$relation.Schedule
                 $LagTime =$relation.LagTime
                 $LagTimeDate=(Get-Date).AddSeconds(-$LagTime)
@@ -10189,7 +10200,11 @@ Function show_vserver_dr (
                 if ( $Schedule ) { $tmp_str = $tmp_str + "[$SmSchedule]"  }
                 if ($ReverseRelationHealth -eq $True)
                 {
-                    $rel=[string]::Format("{0,-7} {1,-55} --> {2,-58} {3,-3} {4,-20} {5,-10} {6,-15} {7,0}",$("["+$RelationShipType+"]"),$("["+$SourceLocation+"]"),`
+                    $rel=[string]::Format("{0,-7} {1,0} {2,-55} --> {3,0} {4,-55} {5,-3} {6,-20} {7,-10} {8,-15} {9,0}",`
+                    $("["+$RelationShipType+"]"),`
+                    $("["+$myPrimaryController+"]"),`
+                    $("["+$SourceLocation+"]"),`
+                    $("["+$mySecondaryController+"]"),`
                     $("["+$DestinationLocation+"]"),`
                     $("["+$Type+"]"),`
                     $("["+$RelationPolicy+"]"),`
@@ -10200,7 +10215,11 @@ Function show_vserver_dr (
                 }
                 else
                 {
-                    $rel=[string]::Format("{0,-7} {1,-55} --> {2,-58} {3,-3} {4,-20} {5,-10} {6,-15} [Not Healthy] {7,0}",$("["+$RelationShipType+"]"),$("["+$SourceLocation+"]"),`
+                    $rel=[string]::Format("{0,-7} {1,0} {2,-55} --> {3,0} {4,-55} {5,-3} {6,-20} {7,-10} {8,-15} [Not Healthy] {9,0}",`
+                    $("["+$RelationShipType+"]"),`
+                    $("["+$myPrimaryController+"]"),`
+                    $("["+$SourceLocation+"]"),`
+                    $("["+$mySecondaryController+"]"),`
                     $("["+$DestinationLocation+"]"),`
                     $("["+$Type+"]"),`
                     $("["+$RelationPolicy+"]"),`
@@ -10675,11 +10694,16 @@ Try {
 		elseif(($PrimaryVersion.Major -eq 8 -and $PrimaryVersion.Minor -ge 3 -and $PrimaryVersion.Build -ge 2) -and ($SecondaryVersion.Major -eq 8 -and $SecondaryVersion.Minor -ge 3 -and $SecondaryVersion.Build -ge 2)){
 			$vfrEnable=$True
 		}
-	}
+    }
     if($PrimaryVersion.Major -ge 9 -and $SecondaryVersion.Major -ge 9){
-	    $vfrEnable=$True
-	}
-    Write-LogDebug "VFR mode is set to [$vfrEnable]"
+        $vfrEnable=$True
+        Write-LogDebug "VFR mode is set to [$vfrEnable]"
+    }
+    if($Global:SnapmirrorType -eq "DP")
+    {
+        Write-Log "[$workon] User chose to force creation of DP relationship"
+        $vfrEnable=$False
+    }
 
     Write-LogDebug "Get-NcVol -Query @{Vserver=$mySecondaryVserver;VolumeStateAttributes=@{IsVserverRoot=$false;State="online"}} -Controller $mySecondaryController"
     $VolList=Get-NcVol -Query @{Vserver=$mySecondaryVserver;VolumeStateAttributes=@{IsVserverRoot=$false;State="online"}} -Controller $mySecondaryController -ErrorVariable ErrorVar
@@ -11199,15 +11223,15 @@ Try {
                     $CurrentPolicy=$Global:XDPPolicy
                 }else{
                     # add code here to convert snapmirror async to sync
-                    Write-Log "Switch from any Policy to another"
+                    Write-LogDebug "Switch from any Policy to another"
                     if($relation.Policy -notin $("Sync","StrictSync")){
-                        Write-Log "From Async to Sync"
+                        Write-LogDebug "From Async to Sync"
                         $ConvertType="Async2Sync"
                     }elseif($relation.Policy -in ("Sync","StrictSync") -and $Global:XDPPolicy -in ("Sync","StrictSync")){
-                        Write-Log "From Sync to Sync"
+                        Write-LogDebug "From Sync to Sync"
                         $ConvertType="Sync2Sync"
                     }else{
-                        Write-Log "From Sync to Async"
+                        Write-LogDebug "From Sync to Async"
                         $ConvertType="Sync2Async"
                     }
                     Write-LogDebug "Invoke-NcSnapmirrorQuiesce -DestinationCluster $mySecondaryCluster -DestinationVserver $mySecondaryVserver -DestinationVolume $PrimaryVol `
@@ -15874,11 +15898,15 @@ Try {
     }
     if("Shares" -in $objects){
         #add code here to restore CIFS Shares & Symlink?
-        if ( ( $ret=create_update_CIFS_shares_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { 
+        <# if ( ( $ret=update_cifs_usergroup -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $False -Restore $True) -ne $True ) {
+            Write-LogError "ERROR: update_cifs_usergroup failed" 
+            $Return=$False			
+        } #>
+        if ( ( $ret=create_update_CIFS_shares_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $False -Restore $True) -ne $True ) { 
             Write-LogError "ERROR: create_update_CIFS_share"
             $Return = $False 
         }
-        if ( ( $ret=create_update_cifs_symlink_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { 
+        if ( ( $ret=create_update_cifs_symlink_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $False -Restore $True) -ne $True ) { 
             Write-LogError "ERROR: Failed to create all cifs symlinks"
             $Return = $False 
         }

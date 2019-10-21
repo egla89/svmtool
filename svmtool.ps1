@@ -236,6 +236,10 @@
 .PARAMETER LogLevelLogFile
     Optional argument to set the level of logging for logging to file
     Values are Debug,Info,Warn,Error,Fatal,Off
+.PARAMETER SnapmirrorType
+    Optional argument to force (is possible, lees then 9.6) snapmirror relationships to be created as DP instead of XDP
+    Used with ConfigureDr, UpdateDr, ClondeDr, UpdateReverse, Migrate, Backup and Restore
+    NB: Note that since ONTAP 9.6 all DP relationships are automaticaly transformed as XDP relationships
 .PARAMETER DefaultLocalUserCredentials
     Optional argument to pass the credentials for local user create/update
 	In NonInteractive Mode, we cannot prompt for user password.  If you want users to be created, the password from these credentials is used.
@@ -618,6 +622,16 @@ Param (
     [string]$Instance,
 
     [Parameter(Mandatory = $false, ParameterSetName = 'ConfigureDR')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'UpdateDR')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'CloneDR')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'UpdateReverse')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'Migrate')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'Backup')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'Restore')]
+    [ValidateSet("DP", "XDP")]
+    [string]$SnapmirrorType="XDP",
+
+    [Parameter(Mandatory = $false, ParameterSetName = 'ConfigureDR')]
     [Parameter(Mandatory = $false, ParameterSetName = 'CloneDR')]
     [Parameter(Mandatory = $false, ParameterSetName = 'Restore')]
     [Parameter(Mandatory = $false, ParameterSetName = 'RestoreObject')]
@@ -941,8 +955,8 @@ $Global:MIN_MINOR = 5
 $Global:MIN_BUILD = 0
 $Global:MIN_REVISION = 0
 #############################################################################################
-$Global:RELEASE = "0.2.8"
-$Global:SCRIPT_RELEASE = "0.1.13"
+$Global:RELEASE = "0.2.9"
+$Global:SCRIPT_RELEASE = "0.1.14"
 $Global:BASEDIR = 'C:\Scripts\SVMTOOL'
 $Global:SVMTOOL_DB_DEFAULT = $Global:BASEDIR
 $Global:CONFBASEDIR = $BASEDIR + '\etc\'
@@ -983,6 +997,7 @@ $Global:XDPPolicy = $XDPPolicy
 $Global:MirrorSchedule = $MirrorSchedule
 $Global:DefaultPass = $DefaultPass
 $Global:Schedule = $Schedule
+$Global:SnapmirrorType = $SnapmirrorType
 
 if ( ( $Instance -eq $null ) -or ( $Instance -eq "" ) ) {
     if ($Backup.Length -eq 0 -and $Restore.Length -eq 0 -and $RestoreObject.Length -eq 0) {
@@ -1855,7 +1870,7 @@ if ( $RestoreObject ){
                 foreach ($date in $listBackupAvailable) {
                     $numFiles = (Get-ChildItem $($SVMTOOL_DB + "\" + $Vserver + "\" + $date + "\") | Measure-Object).Count
                     $datetime = [datetime]::parseexact($date, "yyyyMMddHHmmss", $null)
-                    Format-ColorBrackets "`t[$i] : [$datetime] [$numFiles Files]" -FirstIsSpecial
+                    Format-ColorBrackets "`t[$i] : [$datetime] [$date] [$numFiles Files]" -FirstIsSpecial
                     $i++
                 }
                 $Query = "Please select Backup from (1.." + $listBackupAvailable.count + ")"
@@ -1906,8 +1921,7 @@ if ( $RestoreObject ){
         $Global:VOLUME_TYPE="RW"
     }
     $Global:SVMTOOL_DB=$SVMTOOL_DB
-    # add here code to replace above by a call to function from svmtools.psm1
-    # restore_objects myPrimaryController mySecondaryController myPrimaryVserver mySecondaryVserver workOn nodeMatchRegEx aggrMatchRegEx myDataAggr RW
+    
     if ( ( $ret= restore_object -myPrimaryController $NcPrimaryCtrl `
     -mySecondaryController $NcSecondaryCtrl `
     -myPrimaryVserver $Vserver `
@@ -1921,7 +1935,7 @@ if ( $RestoreObject ){
         clean_and_exit 1
     }
 
-    Write-Log "Finished restore object [$Objects] from [$RESTORE_SRC_CLUSTER]:[$Vserver] to [$Global:RESTORE_DST_CLUSTER]:[$Global:DestinationSVM]" -firstValueIsSpecial
+    Write-Log "Finished restore object [$Objects] from [$RESTORE_SRC_CLUSTER]:[$Vserver] to [$RESTORE_DST_CLUSTER]:[$DestinationSVM]" -firstValueIsSpecial
     clean_and_exit 0  
 }
 

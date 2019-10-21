@@ -16,13 +16,14 @@
 #   1.0.4 : Add custom AD OU & tmp cifs lif vlan to join in AD
 #   1.0.5 : Fix check if CIFS server is running
 #   1.0.6 : Added skipVscanFpolicy
+#   1.0.7 : Added SnapmirrorType & ForceCloneOriginal option
 @{
 
     # Script module or binary module file associated with this manifest.
     RootModule        = '.\svmtool.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '1.0.6'
+    ModuleVersion     = '1.0.7'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()

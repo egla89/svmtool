@@ -475,6 +475,11 @@ function New-SvmDr {
         [ValidateSet("Debug", "Info", "Warn", "Error", "Fatal", "Off")]
         [string]$LogLevelLogFile = "Info",
 
+        # Force creation of DP Snapmirror relationship instead of default XDP
+        [Parameter(Mandatory = $false)]
+        [ValidateSet("DP", "XDP")]
+        [string]$SnapmirrorType="XDP",
+
         # Enables Non-Interactive Mode
         # Is default enabled in Wfa-Integration Mode
         [switch]$NonInteractive,
@@ -631,8 +636,6 @@ function Show-SvmDr {
         [Parameter(Mandatory = $true)]
         [string]$Vserver,
 
-        # Enables display of MSID of the volumes
-        [switch]$MSID,
 
         # Enables display of lag information
         [switch]$Lag,
@@ -845,6 +848,11 @@ function Update-SvmDr {
 
         # Enables OnCommand Workflow Automation (WFA) Integration
         [switch]$WfaIntegration,
+
+        # Force creation of DP Snapmirror relationship instead of default XDP
+        [Parameter(Mandatory = $false)]
+        [ValidateSet("DP", "XDP")]
+        [string]$SnapmirrorType="XDP",
 
         # Enables HTTP mode (default HTTPS)
         [switch]$HTTP,
@@ -1114,6 +1122,11 @@ function Invoke-SvmDrResyncReverse {
         # Snapmirror Policy to use
         [Parameter(Mandatory = $false)]
         [string]$XDPPolicy,
+        
+        # Force creation of DP Snapmirror relationship instead of default XDP
+        [Parameter(Mandatory = $false)]
+        [ValidateSet("DP", "XDP")]
+        [string]$SnapmirrorType="XDP",
 
         # Enables HTTP mode (default HTTPS)
         [switch]$HTTP,
@@ -2409,7 +2422,10 @@ function New-SvmDrClone {
         [string]$ActiveDirectoryCustomOU,     
         
         # Skip vscan and fpolicy actions
-        [switch]$SkipVscanFpolicy,        
+        [switch]$SkipVscanFpolicy,
+        
+        [Parameter(Mandatory = $false]
+        [switch]$ForceCloneOriginal,        
 
         # Loglevel of the console output
         [ValidateSet("Debug", "Info", "Warn", "Error", "Fatal", "Off")]
