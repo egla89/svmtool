@@ -2424,7 +2424,7 @@ function New-SvmDrClone {
         # Skip vscan and fpolicy actions
         [switch]$SkipVscanFpolicy,
         
-        [Parameter(Mandatory = $false]
+        [Parameter(Mandatory = $false)]
         [switch]$ForceCloneOriginal,        
 
         # Loglevel of the console output

@@ -626,8 +626,6 @@ Param (
     [Parameter(Mandatory = $false, ParameterSetName = 'CloneDR')]
     [Parameter(Mandatory = $false, ParameterSetName = 'UpdateReverse')]
     [Parameter(Mandatory = $false, ParameterSetName = 'Migrate')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'Backup')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'Restore')]
     [ValidateSet("DP", "XDP")]
     [string]$SnapmirrorType="XDP",
 
@@ -1363,12 +1361,12 @@ if ( $Backup ) {
                     exit 1
                 }
 
-                check_create_dir -FullPath $LOGFILE -Vserver $myPrimaryVserver
+                check_create_dir -FullPath $LOGFILE -Vserver $myPrimaryVserver | Out-Null
                 Write-Log "[$myPrimaryVserver] Log File is [$LOGFILE]"
                 $Global:SVMTOOL_DB = $SVMTOOL_DB
                 $Global:JsonPath = $($SVMTOOL_DB + "\" + $myPrimaryVserver + "\" + $BackupDate + "\")
                 Write-LogDebug "[$myPrimaryVserver] Backup Folder is [$Global:JsonPath]"
-                check_create_dir -FullPath $($Global:JsonPath + "backup.json") -Vserver $myPrimaryVserver
+                check_create_dir -FullPath $($Global:JsonPath + "backup.json") -Vserver $myPrimaryVserver | Out-Null
 
                 Write-LogDebug "[$myPrimaryVserver] Backup Folder after check_create_dir is [$Global:JsonPath]"
                 if ( ( $ret = create_vserver_dr -myPrimaryController $myPrimaryController -workOn $myPrimaryVserver -Backup -myPrimaryVserver $myPrimaryVserver -DDR $False -aggrMatchRegEx $AggrMatchRegex -nodeMatchRegEx $NodeMatchRegex -myDataAggr $DataAggr -RootAggr $RootAggr)[-1] -ne $True ) {
@@ -1676,7 +1674,7 @@ if ( $Restore ) {
                 set_log_level -loggerinstance "logonly_$guid" -level "All"
                 $Global:MasterLog = get_logger -name "logonly" 
 
-                check_create_dir -FullPath $LOGFILE -Vserver $SourceVserver
+                check_create_dir -FullPath $LOGFILE -Vserver $SourceVserver | Out-Null
 
                 $Global:SVMTOOL_DB = $SVMTOOL_DB
                 $Global:JsonPath = $JsonPath
@@ -1684,7 +1682,7 @@ if ( $Restore ) {
                 $Global:DefaultLocalUserCredentials = $DefaultLocalUserCredentials
                 $Global:ActiveDirectoryCredentials = $ActiveDirectoryCredentials
                 $Global:DefaultLDAPCredentials = $DefaultLDAPCredentials
-                check_create_dir -FullPath $Global:JsonPath -Vserver $SourceVserver
+                check_create_dir -FullPath $Global:JsonPath -Vserver $SourceVserver | Out-Null
                 $DestinationCluster = $DestinationController.Name
                 Write-LogDebug ""
                 Write-LogDebug "Restore [$SourceVserver] on Cluster [$DestinationCluster]"
@@ -1892,7 +1890,7 @@ if ( $RestoreObject ){
         }
     }
     $Global:JsonPath = $($SVMTOOL_DB + "\" + $Vserver + "\" + $date + "\")
-    check_create_dir -FullPath $Global:JsonPath -Vserver $Vserver
+    check_create_dir -FullPath $Global:JsonPath -Vserver $Vserver | Out-Null
 
     # Connect to the Cluster
     $myCred = get_local_cDotcred ($RESTORE_SRC_CLUSTER) 

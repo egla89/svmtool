@@ -943,18 +943,18 @@ Function get_local_cred ([string]$myCredential) {
 	}
 
 	$cred=read_cred_from_file $Global:CRED_CONF_FILE
-	if ( $cred -eq $null ) 
+	if ( $null -eq $cred ) 
     {
-        if(-not $Global:NonInteractive -or ($Global:ActiveDirectoryCredentials -ne $null)){
+        if( -not $Global:NonInteractive -or ( $null -ne $Global:ActiveDirectoryCredentials ) ){
             $status = set_cred_from_cli $myCredential $Global:CRED_CONF_FILE
 		    $cred=read_cred_from_file $Global:CRED_CONF_FILE
-		    if ( $cred -eq $null ) 
+		    if ( $null -eq $cred ) 
             {
 			    Write-LogError "ERROR: Unable to set your credentials for $myCredential Exit" 
         	    clean_and_exit 1
 		    }
         }else{
-			Write-LogError "ERROR: Unable to set your credentials for $myCredential in NonInteractive Mode | Exit" 
+            Write-LogError "ERROR: Unable to set your credentials for $myCredential in NonInteractive Mode | Exit" 
         	clean_and_exit 1
         }
 	}
@@ -964,7 +964,7 @@ Function get_local_cred ([string]$myCredential) {
 #############################################################################################
 Function set_cred_from_cli ([string]$myCredential, [string]$cred_file ) {
 	Write-Log "Login for [$myCredential]"
-    if($Global:ActiveDirectoryCredentials -ne $null){
+    if($null -ne $Global:ActiveDirectoryCredentials){
         $cred = $Global:ActiveDirectoryCredentials
         $login = $cred.Username
     }else{
@@ -1483,7 +1483,7 @@ Function create_update_vscan_dr (
             }
         }
         if($Backup -eq $False){
-            if(-not $Global:NonInteractive){
+            #if(-not $Global:NonInteractive){
                 foreach ( $PrimaryScannerPool in ( $PrimaryScannerPoolList | Skip-Null ) ) {
                     $PrimaryScannerPoolName=$PrimaryScannerPool.ScannerPool
                     $PrimaryScannerPoolPolicy=$PrimaryScannerPool.ScannerPolicy
@@ -1583,9 +1583,9 @@ Function create_update_vscan_dr (
 
                     }
                 }
-            }else{
-                Write-LogWarn "SKIPPING vscan scanner pool in non-interactive mode"    
-            }
+            #}else{
+            #    Write-LogWarn "SKIPPING vscan scanner pool in non-interactive mode"    
+            #}
         }
         if($PrimaryScannerPoolList -ne $Null)
         {
@@ -2573,7 +2573,7 @@ Function create_update_fpolicy_dr(
             $PrimaryFpolicyEngineCertificateCommonName=$PrimaryFpolicyEngine.CertificateCommonName
             $PrimaryFpolicyEngineCertificateSerial=$PrimaryFpolicyEngine.CertificateSerial
             $PrimaryFpolicyEngineCertificateCa=$PrimaryFpolicyEngine.CertificateCa
-            if(-not $Global:NonInteractive){
+            #if(-not $Global:NonInteractive){
                 if($Backup -eq $False){
                     Write-LogDebug "Get-NcFpolicyExternalEngine -Name $PrimaryFpolicyEngineName -Vserver $mySecondaryVserver -controller $mySecondaryController"
                     $SecondaryFpolicyEngine=Get-NcFpolicyExternalEngine -Name $PrimaryFpolicyEngineName -Vserver $mySecondaryVserver -controller $mySecondaryController  -ErrorVariable ErrorVar
@@ -2634,7 +2634,7 @@ Function create_update_fpolicy_dr(
                                 while($ANS -ne 'n')
                                 {
                                     $SecondaryFpolicyEnginePrimaryServers+=ask_IpAddr_from_cli -myIpAddr $myFpolicyEnginePrimaryServers[$num++] -workOn $workOn
-                                    $ANS=Read-HostOptions -question "[$workOn] Do you want to add more Primary External Server ?" -options "y/n"
+                                    $ANS=Read-HostOptions -question "[$workOn] Do you want to add more Primary External Server ?" -options "y/n" -default "n"
                                 }
                                 if( ($PrimaryFpolicyEngineSecondaryServers_str -ne $SecondaryFpolicyEngineSecondaryServers_str) `
                                     -and (($PrimaryFpolicyEngineSecondaryServers -ne $null) -and ($SecondaryFpolicyEngineSecondaryServers -ne $null)) )
@@ -2653,7 +2653,7 @@ Function create_update_fpolicy_dr(
                                     while($ANS -ne 'n')
                                     {
                                         $SecondaryFpolicyEngineSecondaryServers+=ask_IpAddr_from_cli -myIpAddr $myFpolicyEngineSecondaryServers[$num++] -workOn $workOn
-                                        $ANS=Read-HostOptions -question "Do you want to add more Secondary External Server ?" -options "y/n"
+                                        $ANS=Read-HostOptions -question "Do you want to add more Secondary External Server ?" -options "y/n" -default "n"
                                     }        
                                 }
 
@@ -2754,7 +2754,7 @@ Function create_update_fpolicy_dr(
                         while($ANS -ne 'n')
                         {
                             $SecondaryFpolicyEnginePrimaryServers+=ask_IpAddr_from_cli -myIpAddr $myFpolicyEnginePrimaryServers[$num++] -workOn $workOn
-                            $ANS=Read-HostOptions -question "Do you want to add more Primary External Server ?" -options "y/n"
+                            $ANS=Read-HostOptions -question "[$workOn] Do you want to add more Primary External Server ?" -options "y/n" -default "n"
                         }
                         if( $PrimaryFpolicyEngineSecondaryServers -ne $null )
                         {
@@ -2765,7 +2765,7 @@ Function create_update_fpolicy_dr(
                             while($ANS -ne 'n')
                             {
                                 $SecondaryFpolicyEngineSecondaryServers+=ask_IpAddr_from_cli -myIpAddr $myFpolicyEngineSecondaryServers[$num++] -workOn $workOn
-                                $ANS=Read-HostOptions -question "[$workOn] Do you want to add more Secondary External Server ?" -options "y/n"
+                                $ANS=Read-HostOptions -question "[$workOn] Do you want to add more Secondary External Server ?" -options "y/n" -default "n"
                             }    
                         }
 
@@ -2811,9 +2811,9 @@ Function create_update_fpolicy_dr(
                         }    
                     }
                 }
-            }else{
-                Write-LogWarn "SKIPPING fpolicy engine in non-interactive mode"    
-            }
+            #}else{
+            #    Write-LogWarn "SKIPPING fpolicy engine in non-interactive mode"    
+            #}
             # add code to get/create Event
             if($Restore -eq $False){
                 Write-LogDebug "Get-NcFpolicyEvent -Vserver $myPrimaryVserver -Controller $myPrimaryController"
@@ -6149,7 +6149,7 @@ Try {
             if ( $Peer -eq $null ) {
                 $Peer = Get-NcVserverPeer -Vserver $mySecondaryVserver  -PeerVserver $myPrimaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar	
                 if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcVserverPeer failed [$ErrorVar]" } 
-                Write-Log "[$workOn] Create vserver peer: [$myPrimaryVserver] [$myPrimaryController] [$workOn] [$mySecondaryCluster]"
+                Write-Log "[$workOn] Create vserver peer: [$myPrimaryVserver]@[$myPrimaryController] <-> [$workOn]@[$mySecondaryCluster]"
                 Write-LogDebug "create_vserver_peer: New-NcVserverPeer -Vserver $myPrimaryVserver -Application snapmirror  -PeerVserver $mySecondaryVserver -PeerCluster $mySecondaryCluster -Controller $myPrimaryController"
                 try{
                     if ( ($ret=check_create_cluster_peer -SourceController $myPrimaryController -PeerController $mySecondaryCluster) -eq $True){
@@ -7096,7 +7096,7 @@ Try {
                     if ( $ANS1 -eq 'y' ) 
                     {
                         $BackupOfGateway=""
-                        if($Global:NonInteractive -and $ForClone){
+                        if( ($Global:NonInteractive -and $ForClone) -and (-not $Global:ForceCloneOriginal.IsPresent) ){
                             $tmp1 = (Get-Random -minimum 0 -maximum 255)
                             $tmp2 = (Get-Random -minimum 1 -maximum 254)
                             $BackupOfGateway=$PrimaryGateway
@@ -8087,14 +8087,14 @@ Try {
         $PrimSessionSecurityForAdLdap=$PrimaryCIFSsecurity.SessionSecurityForAdLdap
         $PrimSmb1EnabledForDcConnections=$PrimaryCIFSsecurity.Smb1EnabledForDcConnections
         $PrimSmb2EnabledForDcConnections=$PrimaryCIFSsecurity.Smb2EnabledForDcConnections
-        Write-LogDebug "Set-NcCifsSecurity -ClockSkew $PrimKerberosClockSkew -TicketAge $PrimKerberosTicketAge -RenewAge $PrimKerberosRenewAge -KerberosKdcTimeout $PrimKerberosKdcTimeout `
+        Write-LogDebug "Set-NcCifsSecurity -ClockSkew $PrimKerberosClockSkew -TicketAge $PrimKerberosTicketAge -RenewAge $PrimKerberosRenewAge `
         -IsSigningRequired $PrimIsSigningRequired -IsPasswordComplexityRequired $PrimIsPasswordComplexityRequired -UseStartTlsForAdLdap $PrimUseStartTlsForAdLdap `
         -IsAesEncryptionEnabled $PrimIsAesEncryptionEnabled -LmCompatibilityLevel $PrimLmCompatibilityLevel -AdminCredential $ADCred -IsSmbEncryptionRequired $PrimIsSmbEncryptionRequired `
         -SessionSecurityForAdLdap $PrimSessionSecurityForAdLdap -Smb1EnabledForDcConnections $PrimSmb1EnabledForDcConnections -Smb2EnabledForDcConnections $PrimSmb2EnabledForDcConnections `
         -VserverContext $mySecondaryVserver -Controller $mySecondaryController"
         $SecondaryDomain=(Get-NcCifsServer -VserverContext $mySecondaryVserver -Controller $mySecondaryController).Domain
         $ADCred = get_local_cred ($SecondaryDomain)
-        $out=Set-NcCifsSecurity -ClockSkew $PrimKerberosClockSkew -TicketAge $PrimKerberosTicketAge -RenewAge $PrimKerberosRenewAge -KerberosKdcTimeout $PrimKerberosKdcTimeout `
+        $out=Set-NcCifsSecurity -ClockSkew $PrimKerberosClockSkew -TicketAge $PrimKerberosTicketAge -RenewAge $PrimKerberosRenewAge `
         -IsSigningRequired $PrimIsSigningRequired -IsPasswordComplexityRequired $PrimIsPasswordComplexityRequired -UseStartTlsForAdLdap $PrimUseStartTlsForAdLdap `
         -IsAesEncryptionEnabled $PrimIsAesEncryptionEnabled -LmCompatibilityLevel $PrimLmCompatibilityLevel -AdminCredential $ADCred -IsSmbEncryptionRequired $PrimIsSmbEncryptionRequired `
         -SessionSecurityForAdLdap $PrimSessionSecurityForAdLdap -Smb1EnabledForDcConnections $PrimSmb1EnabledForDcConnections -Smb2EnabledForDcConnections $PrimSmb2EnabledForDcConnections `
@@ -8902,7 +8902,7 @@ Try {
             }else{
                 Write-LogDebug "No temp cifs lif data"
             }
-
+            $Global:SecondaryCifsLifCreated=$SecondaryCifsLifCreated
             $myInterfaceName=""
             $SecondaryInterfaceList = Get-NcNetInterface -Vserver $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar
 
@@ -8985,16 +8985,6 @@ Try {
                     Write-logDebug "Add-NcCifsServer -Name $SecondaryCifsServer -Domain $SecondaryDomain -OrganizationalUnit $SecondaryOrganizationalUnit -DefaultSite  $SecondaryDefaultSite -AdminCredential $ADCred -Force -AdministrativeStatus $CIFSAdminState -VserverContext $mySecondaryVserver -Controller $mySecondaryController" 
                     $out = Add-NcCifsServer -Name $SecondaryCifsServer -Domain $SecondaryDomain -OrganizationalUnit $SecondaryOrganizationalUnit -DefaultSite  $SecondaryDefaultSite -AdminCredential $ADCred -Force -AdministrativeStatus $CIFSAdminState -VserverContext $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar
                     if ( $? -ne $True ) { $AddNcCifsFailed = $true; throw "ERROR: Add-NcCifsServer failed [$ErrorVar]" ; }else{ $AddNcCifsFailed = $false;Write-Log "[$workOn] Cifs server is joined"}
-                    if($SecondaryCifsLifCreated){
-                        Write-Log "[$workOn] Removing tmp lif"
-                        Write-logDebug "Set-NcNetInterface $($TempCifsLif.InterfaceName) -Vserver $mySecondaryVserver -AdministrativeStatus down -Controller $mySecondaryController -ErrorVariable ErrorVar"
-                        $out = Set-NcNetInterface -Name $TempCifsLif.InterfaceName -Vserver $mySecondaryVserver -AdministrativeStatus down -Controller $mySecondaryController -ErrorVariable ErrorVar
-                        if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Set-NcNetInterface failed [$ErrorVar]" ; }
-                        Write-LogDebug "Remove-NcNetInterface $($TempCifsLif.InterfaceName) -Vserver $mySecondaryVserver -Confirm:$false -Controller $mySecondaryController -ErrorVariable ErrorVar"
-                        $out = Remove-NcNetInterface -Name $TempCifsLif.InterfaceName -Vserver $mySecondaryVserver -Confirm:$false -Controller $mySecondaryController -ErrorVariable ErrorVar
-                        if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Remove-NcNetInterface failed [$ErrorVar]" ; }
-                    }
-
                     if( ($myInterfaceName.Length -gt 0) -and ($Global:RESTORE_ORIGINAL -eq $False -and ( -not ($Global:ForceCloneOriginal.IsPresent))) )
                     {
                         Write-logDebug "Set-NcNetInterface -Name $myInterfaceName -Vserver $mySecondaryVserver -AdministrativeStatus down -Controller $mySecondaryController"
@@ -9100,9 +9090,11 @@ Try {
     if($Backup -eq $False -and $Restore -eq $False){
         if($WinSIDCompatible -eq $False){
             Write-LogDebug "set_all_lif -mySecondaryVserver $mySecondaryVserver -myPrimaryVserver $myPrimaryVserver -mySecondaryController $mySecondaryController  -myPrimaryController $myPrimaryController -state up"
-            if (($ret=set_all_lif -mySecondaryVserver $mySecondaryVserver -myPrimaryVserver $myPrimaryVserver -mySecondaryController $mySecondaryController  -myPrimaryController $myPrimaryController -state up) -ne $True ) {
-                    Write-LogError "ERROR: Failed to set all lif up on [$mySecondaryVserver]"
-                    clean_and_exit 1
+            if (-not $Global:SecondaryCifsLifCreate){
+                if (($ret=set_all_lif -mySecondaryVserver $mySecondaryVserver -myPrimaryVserver $myPrimaryVserver -mySecondaryController $mySecondaryController  -myPrimaryController $myPrimaryController -state up) -ne $True ) {
+                        Write-LogError "ERROR: Failed to set all lif up on [$mySecondaryVserver]"
+                        clean_and_exit 1
+                }
             }
         }
     }
@@ -9172,9 +9164,11 @@ Try {
             foreach ( $NetBiosAliase in ( $PrimaryNetbiosAliases | Skip-Null ) ) {
                 Write-Log "[$mySecondaryVserver] Change NetBiosAlias to [$NetBiosAliase]"
                 Write-LogDebug "set_all_lif -mySecondaryVserver $mySecondaryVserver -myPrimaryVserver $myPrimaryVserver -mySecondaryController $mySecondaryController  -myPrimaryController $myPrimaryController -state up"
-                if (($ret=set_all_lif -mySecondaryVserver $mySecondaryVserver -myPrimaryVserver $myPrimaryVserver -mySecondaryController $mySecondaryController  -myPrimaryController $myPrimaryController -state up) -ne $True ) {
-                    Write-LogError "ERROR: Failed to set all lif up on [$mySecondaryVserver]"
-                    clean_and_exit 1
+                if ( -not $Global:SecondaryCifsLifCreate ){
+                    if (($ret=set_all_lif -mySecondaryVserver $mySecondaryVserver -myPrimaryVserver $myPrimaryVserver -mySecondaryController $mySecondaryController  -myPrimaryController $myPrimaryController -state up) -ne $True ) {
+                        Write-LogError "ERROR: Failed to set all lif up on [$mySecondaryVserver]"
+                        clean_and_exit 1
+                    }
                 }
                 Write-LogDebug "Set-NcCifsServer -VserverContext $mySecondaryVserver -Domain $SecondaryDomain -AdminCredential $ADcred -Controller $mySecondaryController -AddNetbiosAlias $NetBiosAliase"
                 $out = Set-NcCifsServer -VserverContext $mySecondaryVserver -Domain $SecondaryDomain -AdminCredential $ADcred -Controller $mySecondaryController -AddNetbiosAlias $NetBiosAliase  -ErrorVariable ErrorVar
@@ -9247,6 +9241,8 @@ Try {
     }else{
         if(Test-Path $($Global:JsonPath+"Get-NcCifsShare.json")){
             $SharesListSource=Get-Content $($Global:JsonPath+"Get-NcCifsShare.json") -Raw | ConvertFrom-Json
+            $ShareCount=$SharesListSource.Count
+            Write-LogDebug "[$workon] there is [$ShareCount] share(s) availabe in source backup files"
         }else{
             $Return=$False
             $filepath=$($Global:JsonPath+"Get-NcCifsShare.json")
@@ -9254,6 +9250,8 @@ Try {
         }
         if(Test-Path $($Global:JsonPath+"Get-NcCifsShareAcl.json")){
             $PrimaryAllAclList=Get-Content $($Global:JsonPath+"Get-NcCifsShareAcl.json") -Raw | ConvertFrom-Json
+            $ACLCount=$PrimaryAllAclList.Count
+            Write-LogDebug "[$workon] there is [$ACLCount] ACL(s) availabe in source backup files"
         }else{
             $Return=$False
             $filepath=$($Global:JsonPath+"Get-NcCifsShareAcl.json")
@@ -9571,9 +9569,11 @@ $request=@"
         
         if( -not ($FromReactivate.IsPresent) ){
             Write-LogDebug "Not in a ReActivate process, so disable LIF on [$MySecondaryVserver]"
-            if (($ret=set_all_lif -mySecondaryVserver $mySecondaryVserver -myPrimaryVserver $myPrimaryVserver -mySecondaryController $mySecondaryController  -myPrimaryController $myPrimaryController -state down) -ne $True ) {
-                Write-LogError "ERROR: Failed to set all lif up on [$mySecondaryVserver]"
-                clean_and_exit 1
+            if ( -not $Global:SecondaryCifsLifCreate ){
+                if (($ret=set_all_lif -mySecondaryVserver $mySecondaryVserver -myPrimaryVserver $myPrimaryVserver -mySecondaryController $mySecondaryController  -myPrimaryController $myPrimaryController -state down) -ne $True ) {
+                    Write-LogError "ERROR: Failed to set all lif up on [$mySecondaryVserver]"
+                    clean_and_exit 1
+                }
             }
         }
     }
@@ -10560,13 +10560,11 @@ Try {
     if ( ( $ret=create_update_usermapping_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create User Mapping"}
     if ( ( $ret=create_update_DNS_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create DNS service" ; $Return = $False }
     
-    if(-not $Global:NonInteractive){
-
+    #if(-not $Global:NonInteractive){
         if ( ( $ret=create_update_LDAP_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create LDAP config" ; $Return = $False }
-
-    }else{
-        Write-LogWarn "SKIPPING LDAP config create/update in NonInteractive Mode"
-    }
+    #}else{
+    #    Write-LogWarn "SKIPPING LDAP config create/update in NonInteractive Mode"
+    #}
     if ( ( $ret=create_update_NIS_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create NIS service" ; $Return = $False }
     if ( ( $ret=create_update_NFS_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create NFS service" ; $Return = $False }
     if ( ( $ret=create_update_ISCSI_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create iSCSI service" ; $Return = $False }
@@ -10577,12 +10575,14 @@ Try {
     }
     
     if ( ( $ret=create_update_igroupdr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create all igroups" ; $Return = $False }
-    if(-not $Global:NonInteractive){
-        if ( ( $ret=create_update_vscan_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -fromConfigureDR -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create Vscan config" ; $Return = $False }
-        if ( ( $ret=create_update_fpolicy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -fromConfigureDR -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create Fpolicy config" ; $Return = $False }
-    }else{
-        Write-LogWarn "[$workOn] SKIPPING vscan and fpolicy in non-interactive mode"
-    }
+    # if(-not $Global:NonInteractive){
+    #     if ( ( $ret=create_update_vscan_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -fromConfigureDR -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create Vscan config" ; $Return = $False }
+    #     if ( ( $ret=create_update_fpolicy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -fromConfigureDR -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create Fpolicy config" ; $Return = $False }
+    # }else{
+    #     Write-LogWarn "[$workOn] SKIPPING vscan and fpolicy in non-interactive mode"
+    # }
+    if ( ( $ret=create_update_vscan_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -fromConfigureDR -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create Vscan config" ; $Return = $False }
+    if ( ( $ret=create_update_fpolicy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -fromConfigureDR -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create Fpolicy config" ; $Return = $False }
 	$ret=create_volume_voldr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver  -workOn $workOn  -Backup $runBackup -Restore $runRestore -aggrMatchRegEx $aggrMatchRegEx -myDataAggr $myDataAggr 
     if ( $ret.count -gt 0 ) {
         if ($ret[0] -ne $True ) { Write-LogError "ERROR: Failed to create all volumes" ; $Return = $False }
@@ -10594,7 +10594,7 @@ Try {
 	if ( ( $ret=create_snapmirror_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn -DDR $DDR -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create all snapmirror relations " ; $Return = $False }
 	if ( ( $ret=create_update_snap_policy_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) {Write-LogError "ERROR: create_update_snap_policy_dr"}
 	if($Backup -eq $False -and $Restore -eq $False){
-        $ASK_WAIT=Read-HostOptions -question "[$mySecondaryVserver] Do you want to wait the end of snapmirror transfers and mount all volumes and map LUNs on [$mySecondaryVserver] now ?" -options "y/n" -default "n"
+        $ASK_WAIT=Read-HostOptions -question "[$mySecondaryVserver] Do you want to wait the end of snapmirror transfers and mount all volumes and map LUNs on [$mySecondaryVserver] now ?" -options "y/n" -default "y"
     }else{
         $ASK_WAIT='y'
     }
@@ -10609,9 +10609,11 @@ Try {
             if ( ( $ret=mount_voldr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver  -workOn $workOn -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to mount all volumes " ; $Return = $False }
         }
         if($Backup -eq $False){
-            if (($ret=set_all_lif -mySecondaryVserver $mySecondaryVserver -myPrimaryVserver $myPrimaryVserver -mySecondaryController $mySecondaryController  -myPrimaryController $myPrimaryController -workOn $workOn  -state up -Backup $runBackup -Restore $runRestore) -ne $True ) {
-                Write-LogError "ERROR: Failed to set all lif up on [$mySecondaryVserver]"
-                $Return=$False
+            if ( -not $Global:SecondaryCifsLifCreate ){
+                if (($ret=set_all_lif -mySecondaryVserver $mySecondaryVserver -myPrimaryVserver $myPrimaryVserver -mySecondaryController $mySecondaryController  -myPrimaryController $myPrimaryController -workOn $workOn  -state up -Backup $runBackup -Restore $runRestore) -ne $True ) {
+                    Write-LogError "ERROR: Failed to set all lif up on [$mySecondaryVserver]"
+                    $Return=$False
+                }
             }
         }
         if((-not $Global:NonInteractive) -or ($Global:DefaultLocalUserCredentials -ne $null)){ # skip on interactive or no default creds
@@ -10623,15 +10625,28 @@ Try {
             Write-LogWarn "SKIPPING cifs user create/update in NonInteractive Mode with no default credentials"
         }
 		if($Backup -eq $False -and $Restore -eq $False){
-            if (($ret=set_all_lif -mySecondaryVserver $mySecondaryVserver -myPrimaryVserver $myPrimaryVserver -mySecondaryController $mySecondaryController  -myPrimaryController $myPrimaryController -workOn $workOn  -state down -Backup $runBackup -Restore $runRestore) -ne $True ) {
-                Write-LogError "ERROR: Failed to set all lif down on [$mySecondaryVserver]"
-                $Return=$False
+            if ( -not $Global:SecondaryCifsLifCreate ){
+                if (($ret=set_all_lif -mySecondaryVserver $mySecondaryVserver -myPrimaryVserver $myPrimaryVserver -mySecondaryController $mySecondaryController  -myPrimaryController $myPrimaryController -workOn $workOn  -state down -Backup $runBackup -Restore $runRestore) -ne $True ) {
+                    Write-LogError "ERROR: Failed to set all lif down on [$mySecondaryVserver]"
+                    $Return=$False
+                }
             }
         }
 		if ( ( $ret=create_update_CIFS_shares_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: create_update_CIFS_share" ; $Return = $False }
         if ( ( $ret=create_update_cifs_symlink_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to create all cifs symlinks" ; $Return = $False }
 		if ( ( $ret=map_lundr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-LogError "ERROR: Failed to map all LUNs " ; $Return = $False }
-		if ( ( $ret=set_serial_lundr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-Log "ERROR: Failed to change LUN serial Numbers" ; $Return = $False} 
+        if ( ( $ret=set_serial_lundr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) { Write-Log "ERROR: Failed to change LUN serial Numbers" ; $Return = $False} 
+        if($Global:SecondaryCifsLifCreated){
+            Write-Log "[$workOn] Removing tmp lif"
+            Write-LogDebug "Get-NcNetInterface -Vserver $mySecondaryVserver -Controller $mySecondaryController | Where-Object {$_.InterfaceName -match `"^tmp_lif_to_join_in_ad_`"}"
+            $TempCifsLif=Get-NcNetInterface -Vserver $mySecondaryVserver -Controller $mySecondaryController | Where-Object {$_.InterfaceName -match "^tmp_lif_to_join_in_ad_"}
+            Write-logDebug "Set-NcNetInterface $($TempCifsLif.InterfaceName) -Vserver $mySecondaryVserver -AdministrativeStatus down -Controller $mySecondaryController -ErrorVariable ErrorVar"
+            $out = Set-NcNetInterface -Name $TempCifsLif.InterfaceName -Vserver $mySecondaryVserver -AdministrativeStatus down -Controller $mySecondaryController -ErrorVariable ErrorVar
+            if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Set-NcNetInterface failed [$ErrorVar]" ; }
+            Write-LogDebug "Remove-NcNetInterface $($TempCifsLif.InterfaceName) -Vserver $mySecondaryVserver -Confirm:$false -Controller $mySecondaryController -ErrorVariable ErrorVar"
+            $out = Remove-NcNetInterface -Name $TempCifsLif.InterfaceName -Vserver $mySecondaryVserver -Confirm:$false -Controller $mySecondaryController -ErrorVariable ErrorVar
+            if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Remove-NcNetInterface failed [$ErrorVar]" ; }
+        }
     }
     if($Backup -eq $True -or $Restore -eq $True){
         #wait-debugger
@@ -11100,7 +11115,6 @@ Try {
 		return $false
 	}
 
-
 	if ( ( remove_vserver_peer -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver ) -ne $True ) {
 		Write-LogError "ERROR: remove_vserver_peer failed" 
 		return $false
@@ -11147,7 +11161,8 @@ Try {
 			Write-LogError "ERROR: Unable to Remove  vserver [$mySecondaryVserver]" 
 			return $false
 		}
-	}
+    }
+    Write-log "[$mySecondaryVserver] Vserver Removed"
     Write-LogDebug "remove_vserver_dr: end"
 	return $true 
 }
