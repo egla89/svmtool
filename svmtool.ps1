@@ -451,6 +451,7 @@
         - 0.2.6 :   Add option to skip anti virus check completely, bugfixes (acl encoding, export policy, ...) 
         - 0.2.7 :   Fix wait_snapmirror_dr
         - 0.2.8 :   Fix import-module svmtool
+        - 0.2.9 :   Modify NonInteractive mode for ConfigureDR and for CloneDR with ForceOriginalClone
 #>
 [CmdletBinding(HelpURI = "https://github.com/oliviermasson/svmtool", DefaultParameterSetName = "ListInstance")]
 Param (
