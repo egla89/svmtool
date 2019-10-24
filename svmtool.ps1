@@ -451,7 +451,8 @@
         - 0.2.6 :   Add option to skip anti virus check completely, bugfixes (acl encoding, export policy, ...) 
         - 0.2.7 :   Fix wait_snapmirror_dr
         - 0.2.8 :   Fix import-module svmtool
-        - 0.2.9 :   Modify NonInteractive mode for ConfigureDR and for CloneDR with ForceOriginalClone
+        - 0.2.9 :   Add snapmirror type option
+        - 0.3.0 :   Modify NonInteractive mode for ConfigureDR and for CloneDR with ForceOriginalClone
 #>
 [CmdletBinding(HelpURI = "https://github.com/oliviermasson/svmtool", DefaultParameterSetName = "ListInstance")]
 Param (
@@ -954,7 +955,7 @@ $Global:MIN_MINOR = 5
 $Global:MIN_BUILD = 0
 $Global:MIN_REVISION = 0
 #############################################################################################
-$Global:RELEASE = "0.2.9"
+$Global:RELEASE = "0.3.0"
 $Global:SCRIPT_RELEASE = "0.1.14"
 $Global:BASEDIR = 'C:\Scripts\SVMTOOL'
 $Global:SVMTOOL_DB_DEFAULT = $Global:BASEDIR
