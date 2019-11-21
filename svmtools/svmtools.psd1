@@ -6,7 +6,7 @@
 # Generated on: 2018-06-07
 #
 # Update by : Olivier MASSON
-# Updated on : 2019-07-19
+# Updated on : 2019-11-11
 #
 # Version Control :
 #   1.0.4 : Initial version
@@ -56,13 +56,14 @@
 #         : Add SnapmirrorType option to force DP relationship instead of XDP
 #   1.2.8 : Modify NonInteractive Mode for ConfigureDR opereations after 'Wait SnapMirror End' 
 #           Modify NonInteractive Mode for CloneDR with ForceCloneOriginal option
+#   1.2.9 : Add PreserveIdentity Mode
 @{
 
     # Script module or binary module file associated with this manifest.
     RootModule        = '.\svmtools.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '1.2.8'
+    ModuleVersion     = '1.2.9'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()

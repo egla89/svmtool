@@ -1,0 +1,738 @@
+[
+    {
+        "UnixidSpecified":  false,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "Permission":  "full_control",
+        "Share":  "axa_axa_qtree",
+        "Unixid":  null,
+        "UserGroupType":  "windows",
+        "UserOrGroup":  "Everyone",
+        "Vserver":  "PSLABDR",
+        "Winsid":  "S-1-1-0"
+    },
+    {
+        "UnixidSpecified":  false,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "Permission":  "read",
+        "Share":  "c$",
+        "Unixid":  null,
+        "UserGroupType":  "windows",
+        "UserOrGroup":  "BUILTIN\\Administrators",
+        "Vserver":  "PSLABDR",
+        "Winsid":  "S-1-5-32-544"
+    },
+    {
+        "UnixidSpecified":  false,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "Permission":  "no_access",
+        "Share":  "NAS_ROOT_00$",
+        "Unixid":  null,
+        "UserGroupType":  "windows",
+        "UserOrGroup":  "BUILTIN\\Administrators",
+        "Vserver":  "PSLABDR",
+        "Winsid":  "S-1-5-32-544"
+    },
+    {
+        "UnixidSpecified":  false,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "Permission":  "full_control",
+        "Share":  "NAS_ROOT_00$",
+        "Unixid":  null,
+        "UserGroupType":  "windows",
+        "UserOrGroup":  "Everyone",
+        "Vserver":  "PSLABDR",
+        "Winsid":  "S-1-1-0"
+    },
+    {
+        "UnixidSpecified":  false,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "Permission":  "full_control",
+        "Share":  "share_axa_qtree_axa_vol_axa_000",
+        "Unixid":  null,
+        "UserGroupType":  "windows",
+        "UserOrGroup":  "demo",
+        "Vserver":  "PSLABDR",
+        "Winsid":  "S-1-5-21-3789581871-656073964-753886855-1108"
+    },
+    {
+        "UnixidSpecified":  false,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "Permission":  "full_control",
+        "Share":  "share_axa_qtree_axa_vol_axa_000",
+        "Unixid":  null,
+        "UserGroupType":  "windows",
+        "UserOrGroup":  "Everyone",
+        "Vserver":  "PSLABDR",
+        "Winsid":  "S-1-1-0"
+    },
+    {
+        "UnixidSpecified":  false,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "Permission":  "full_control",
+        "Share":  "share_axa_qtree_axa_vol_axa_001",
+        "Unixid":  null,
+        "UserGroupType":  "windows",
+        "UserOrGroup":  "demo",
+        "Vserver":  "PSLABDR",
+        "Winsid":  "S-1-5-21-3789581871-656073964-753886855-1108"
+    },
+    {
+        "UnixidSpecified":  false,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "Permission":  "full_control",
+        "Share":  "share_axa_qtree_axa_vol_axa_001",
+        "Unixid":  null,
+        "UserGroupType":  "windows",
+        "UserOrGroup":  "Everyone",
+        "Vserver":  "PSLABDR",
+        "Winsid":  "S-1-1-0"
+    },
+    {
+        "UnixidSpecified":  false,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "Permission":  "full_control",
+        "Share":  "share_axa_qtree_axa_vol_axa_default_000",
+        "Unixid":  null,
+        "UserGroupType":  "windows",
+        "UserOrGroup":  "demo",
+        "Vserver":  "PSLABDR",
+        "Winsid":  "S-1-5-21-3789581871-656073964-753886855-1108"
+    },
+    {
+        "UnixidSpecified":  false,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "Permission":  "full_control",
+        "Share":  "share_axa_qtree_axa_vol_axa_default_000",
+        "Unixid":  null,
+        "UserGroupType":  "windows",
+        "UserOrGroup":  "Everyone",
+        "Vserver":  "PSLABDR",
+        "Winsid":  "S-1-1-0"
+    },
+    {
+        "UnixidSpecified":  false,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "Permission":  "full_control",
+        "Share":  "share_axa_qtree_axa_vol_axa_default_001",
+        "Unixid":  null,
+        "UserGroupType":  "windows",
+        "UserOrGroup":  "demo",
+        "Vserver":  "PSLABDR",
+        "Winsid":  "S-1-5-21-3789581871-656073964-753886855-1108"
+    },
+    {
+        "UnixidSpecified":  false,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "Permission":  "full_control",
+        "Share":  "share_axa_qtree_axa_vol_axa_default_001",
+        "Unixid":  null,
+        "UserGroupType":  "windows",
+        "UserOrGroup":  "Everyone",
+        "Vserver":  "PSLABDR",
+        "Winsid":  "S-1-1-0"
+    },
+    {
+        "UnixidSpecified":  false,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "Permission":  "read",
+        "Share":  "testom",
+        "Unixid":  null,
+        "UserGroupType":  "windows",
+        "UserOrGroup":  "PSLAB-DR\\omasson",
+        "Vserver":  "PSLABDR",
+        "Winsid":  "S-1-5-21-2950932649-2419382224-1004517189-1000"
+    },
+    {
+        "UnixidSpecified":  false,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "Permission":  "change",
+        "Share":  "testom",
+        "Unixid":  null,
+        "UserGroupType":  "windows",
+        "UserOrGroup":  "PSLAB-DR\\tco",
+        "Vserver":  "PSLABDR",
+        "Winsid":  "S-1-5-21-2950932649-2419382224-1004517189-1001"
+    },
+    {
+        "UnixidSpecified":  false,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "Permission":  "change",
+        "Share":  "testom",
+        "Unixid":  null,
+        "UserGroupType":  "unix_user",
+        "UserOrGroup":  "testomu",
+        "Vserver":  "PSLABDR",
+        "Winsid":  null
+    },
+    {
+        "UnixidSpecified":  false,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "Permission":  "full_control",
+        "Share":  "u1$",
+        "Unixid":  null,
+        "UserGroupType":  "windows",
+        "UserOrGroup":  "Everyone",
+        "Vserver":  "PSLABDR",
+        "Winsid":  "S-1-1-0"
+    }
+]

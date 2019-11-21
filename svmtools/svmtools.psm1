@@ -5,7 +5,7 @@
     This module contains several functions to manage SVMDR, Backup and Restore Configuration...
 .NOTES
     Authors  : Olivier Masson, Jerome Blanchet, Mirko Van Colen
-    Release  : October 21th, 2019
+    Release  : November 11th, 2019
 
 #>
 
@@ -75,7 +75,7 @@ function xmlEncode($text){
 
 #############################################################################################
 function add_appender($loggerinstance,$appender){
-    if($appender -ne $null){
+    if( $null -ne $appender ){
         $wrapper = [log4net.LogManager]::GetLogger($loggerinstance)
         $l = $wrapper.Logger
         $l.AddAppender($appender)
@@ -426,12 +426,13 @@ function Read-HostDefault{
         [Parameter(Position=1)]
         [string] $default,
         [switch] $NotEmpty,
-        [switch]$autoselect
+        [switch]$autoselect,
+        [bool]$forceAsk=$False
     )
 
     do{
         Format-Colors -Format "$question [{0:Yellow}] : " -Arguments $default -NoNewLine
-        if($Global:NonInteractive -or $autoselect){
+        if(($Global:NonInteractive -or $autoselect) -and ($forceAsk -eq $False)){
             Write-Log ("-> {0}" -f $default)
             $ans = $default
         }else{
@@ -1187,11 +1188,11 @@ Catch {
 
 #############################################################################################
 # $myIpAddr=ask_IpAddr_from_cli -myIpAddr $PrimaryAddress 
-Function ask_IpAddr_from_cli ([string] $myIpAddr,[string] $workOn="") {
+Function ask_IpAddr_from_cli ([string] $myIpAddr,[string] $workOn="",[bool]$forceAsk=$False) {
 	$loop = $True
 	While ( $loop -eq $True ) {
         #Wait-Debugger
-		$AskIPAddr = Read-HostDefault -question "[$workOn] Please Enter a valid IP Address" -default $myIPAddr
+		$AskIPAddr = Read-HostDefault -question "[$workOn] Please Enter a valid IP Address" -default $myIPAddr -forceAsk $forceAsk
 		if ( ( validate_ip_format $AskIPAddr ) -eq $True ) {
 				$loop = $False
 				return $AskIPAddr
@@ -1202,11 +1203,11 @@ Function ask_IpAddr_from_cli ([string] $myIpAddr,[string] $workOn="") {
 
 
 #############################################################################################
-Function ask_gateway_from_cli ([string]$myGateway,[string] $workOn="" ) {
+Function ask_gateway_from_cli ([string]$myGateway,[string] $workOn="",[bool]$forceAsk=$False) {
 	$loop = $True
 	While ( $loop -eq $True ) {
         #Wait-Debugger
-		$AskGateway = Read-HostDefault -question "[$workOn] Please Enter a valid Gateway Address" -default $myGateway
+		$AskGateway = Read-HostDefault -question "[$workOn] Please Enter a valid Gateway Address" -default $myGateway -forceAsk $forceAsk
 		if ( ( validate_ip_format -IpAddr $AskGateway -AllowNullIP ) -eq $True ) {
             $loop = $False
             return $AskGateway
@@ -1217,11 +1218,11 @@ Function ask_gateway_from_cli ([string]$myGateway,[string] $workOn="" ) {
 
 #############################################################################################
 # $myNetMask=ask_NetMask_from_cli -myNetMask $PrimaryAddress
-Function ask_NetMask_from_cli ([string]$myNetMask,[string] $workOn="" ) {
+Function ask_NetMask_from_cli ([string]$myNetMask,[string] $workOn="",[bool]$forceAsk=$False) {
 	$loop = $True
 	While ( $loop -eq $True ) {
         #Wait-Debugger
-		$AskNetMask = Read-HostDefault -question "[$workOn] Please Enter a valid IP NetMask" -default $myNetMask
+		$AskNetMask = Read-HostDefault -question "[$workOn] Please Enter a valid IP NetMask" -default $myNetMask -forceAsk $forceAsk
 		if ( ( validate_ip_format $AskNetMask ) -eq $True ) {
 				$loop = $False
 				return $AskNetMask
@@ -4686,14 +4687,14 @@ Catch {
     if($Backup -eq $True){Write-LogDebug "run in Backup mode [$myPrimaryVserver]"}
     if($Restore -eq $True){Write-LogDebug "run in Restore mode [$workOn]"}
     $lifsdest=Get-NcNetInterface -vserver $mySecondaryVserver -Controller $mySecondaryController -FirewallPolicy !data
-	if($lifsdest -eq $null)
+	if($null -eq $lifsdest)
 	{
 		$lifsdest=Get-NcNetInterface -vserver $mySecondaryVserver -Controller $mySecondaryController
     }
     if($Restore -eq $True){
         if(Test-Path $($Global:JsonPath+"Get-NcNetInterface.json")){
             $lifssource=Get-Content $($Global:JsonPath+"Get-NcNetInterface.json") -Raw | ConvertFrom-Json
-            if($lifssource -eq $null){
+            if($null -eq $lifssource){
                 Write-LogDebug "No Lif on source vserver"
                 return $True
             }
@@ -4712,7 +4713,7 @@ Catch {
         }
     }
 	$IPsource=$lifssource  | ForEach-Object {$_.Address}
-    $set=$false
+    $LIFset=$false
     $SameIP=@()
 	foreach($lif in $lifsdest){
         $lif_name=$lif.InterfaceName
@@ -4723,19 +4724,19 @@ Catch {
 			if($? -ne $true){
 				Write-LogDebug "ERROR: failed to set lif [$lif_name] into state [$state] reason [$ErrorVar]"
 			}
-			$set=$true
+			$LIFset=$true
 		}elseif($state -eq "up"){
             Write-LogDebug "Cannot set LIF [$lif_name] to up because it as same IP address [$lif_ip] as LIF on source"
             $SameIP+=$lif_ip
         }
     }
-    if( ($set -eq $false) -and ($SameIP.count -ge 1) -and ($Global:RESTORE_ORIGINAL -ne $True -and ( -not ($Global:ForceCloneOriginal.IsPresent)))){
+    if( ($LIFset -eq $false) -and ($SameIP.count -ge 1) -and ($Global:RESTORE_ORIGINAL -ne $True -and (-not ($Global:ForceCloneOriginal.IsPresent))) -and (-not ($AfterMigrate.IsPresent))){
         Write-Warning "You need to change IP address on secondary [$SameIP], which is in conflict with source IP address"
     }
     if($AfterMigrate.IsPresent){
         return $True
     }else{
-        if($set -eq $false){
+        if($LIFset -eq $false){
             if($Restore -eq $False){
                 Write-Log "[$workOn] ERROR: You need at least one lif on the destination that can communicate with Active Directory. Use ConfigureDR to create one"
                 return $False
@@ -4780,11 +4781,11 @@ Try {
             Throw "ERROR: failed to read $filepath"
         }    
     }
-    if ($PrimaryRootVolumeName -eq $null ) { $Return = $False ; Write-logError "root volume not found for $myPrimaryVserver" }
+    if ($null -eq $PrimaryRootVolumeName ) { $Return = $False ; Write-logError "root volume not found for $myPrimaryVserver" }
     if($Backup -eq $False){
         $SecondaryRootVolumeName = (Get-NcVserver -Controller $mySecondaryController -Vserver $mySecondaryVserver  -ErrorVariable ErrorVar).RootVolume
         if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcVserver failed to get RootVolume [$ErrorVar]" } 
-        if ($SecondaryRootVolumeName -eq $null ) { $Return = $False ; Write-logError "root volume not found for $mySecondaryVserver" }
+        if ($null -eq $SecondaryRootVolumeName) { $Return = $False ; Write-logError "root volume not found for $mySecondaryVserver" }
     }
     if($Restore -eq $False){
         $PrimaryRootVolume = Get-NcVol -Controller $myPrimaryController -Vserver $myPrimaryVserver -Volume $PrimaryRootVolumeName  -ErrorVariable ErrorVar
@@ -6974,14 +6975,14 @@ Try {
     }
     if($Backup -eq $True){
         $PrimaryInterfaceList | ConvertTo-Json -Depth 5 | Out-File -FilePath $($Global:JsonPath+"Get-NcNetInterface.json") -Encoding ASCII -Width 65535
-        if( ($ret=get-item $($Global:JsonPath+"Get-NcNetInterface.json") -ErrorAction SilentlyContinue) -ne $null ){
+        if( $null -ne ($ret=get-item $($Global:JsonPath+"Get-NcNetInterface.json") -ErrorAction SilentlyContinue) ){
             Write-LogDebug "$($Global:JsonPath+"Get-NcNetInterface.json") saved successfully"
         }else{
             Write-LogError "ERROR: Failed to saved $($Global:JsonPath+"Get-NcNetInterface.json")"
             $Return=$False
         }
         $PrimaryNetPortList | ConvertTo-Json -Depth 5 | Out-File -FilePath $($Global:JsonPath+"Get-NcNetPort.json") -Encoding ASCII -Width 65535
-        if( ($ret=get-item $($Global:JsonPath+"Get-NcNetPort.json") -ErrorAction SilentlyContinue) -ne $null ){
+        if( $null -ne ($ret=get-item $($Global:JsonPath+"Get-NcNetPort.json") -ErrorAction SilentlyContinue) ){
             Write-LogDebug "$($Global:JsonPath+"Get-NcNetPort.json") saved successfully"
         }else{
             Write-LogError "ERROR: Failed to saved $($Global:JsonPath+"Get-NcNetPort.json")"
@@ -7019,7 +7020,7 @@ Try {
                 if ( $? -ne $True ){$Return = $False ; throw "ERROR: Get-NcNetRoute failed [$ErrorVar]"}
                 if($Backup -eq $True){
                     $PrimaryDefaultRoute | ConvertTo-Json -Depth 5 | Out-File -FilePath $($Global:JsonPath+"Get-NcNetRoute.json") -Encoding ASCII -Width 65535
-                    if( ($ret=get-item $($Global:JsonPath+"Get-NcNetRoute.json") -ErrorAction SilentlyContinue) -ne $null ){
+                    if( $null -ne ($ret=get-item $($Global:JsonPath+"Get-NcNetRoute.json") -ErrorAction SilentlyContinue) ){
                         Write-LogDebug "$($Global:JsonPath+"Get-NcNetRoute.json") saved successfully"
                     }else{
                         Write-LogError "ERROR: Failed to saved $($Global:JsonPath+"Get-NcNetRoute.json")"
@@ -7032,7 +7033,7 @@ Try {
                 if ( $? -ne $True ){$Return = $False ; throw "ERROR: Get-NcNetRoute failed [$ErrorVar]"}
                 if($Backup -eq $True){
                     $PrimaryDefaultRouteOther | ConvertTo-Json -Depth 5 | Out-File -FilePath $($Global:JsonPath+"Get-NcNetRouteOther.json") -Encoding ASCII -Width 65535
-                    if( ($ret=get-item $($Global:JsonPath+"Get-NcNetRouteOther.json") -ErrorAction SilentlyContinue) -ne $null ){
+                    if( $null -ne ($ret=get-item $($Global:JsonPath+"Get-NcNetRouteOther.json") -ErrorAction SilentlyContinue) ){
                         Write-LogDebug "$($Global:JsonPath+"Get-NcNetRouteOther.json") saved successfully"
                     }else{
                         Write-LogError "ERROR: Failed to saved $($Global:JsonPath+"Get-NcNetRouteOther.json")"
@@ -7044,7 +7045,7 @@ Try {
                 if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcNetRoutingGroupRoute failed [$ErrorVar]" }
                 if($Backup -eq $True){
                     $PrimaryDefaultRoute | ConvertTo-Json -Depth 5 | Out-File -FilePath $($Global:JsonPath+"Get-NcNetRoutingGroupRoute.json") -Encoding ASCII -Width 65535
-                    if( ($ret=get-item $($Global:JsonPath+"Get-NcNetRoutingGroupRoute.json") -ErrorAction SilentlyContinue) -ne $null ){
+                    if( $null -ne ($ret=get-item $($Global:JsonPath+"Get-NcNetRoutingGroupRoute.json") -ErrorAction SilentlyContinue) ){
                         Write-LogDebug "$($Global:JsonPath+"Get-NcNetRoutingGroupRoute.json") saved successfully"
                     }else{
                         Write-LogError "ERROR: Failed to saved $($Global:JsonPath+"Get-NcNetRoutingGroupRoute.json")"
@@ -7056,7 +7057,7 @@ Try {
                 if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcNetRoutingGroupRoute failed [$ErrorVar]" }
                 if($Backup -eq $True){
                     $PrimaryDefaultRouteOther | ConvertTo-Json -Depth 5 | Out-File -FilePath $($Global:JsonPath+"Get-NcNetRoutingGroupRouteOther.json") -Encoding ASCII -Width 65535
-                    if( ($ret=get-item $($Global:JsonPath+"Get-NcNetRoutingGroupRouteOther.json") -ErrorAction SilentlyContinue) -ne $null ){
+                    if( $null -ne ($ret=get-item $($Global:JsonPath+"Get-NcNetRoutingGroupRouteOther.json") -ErrorAction SilentlyContinue) ){
                         Write-LogDebug "$($Global:JsonPath+"Get-NcNetRoutingGroupRouteOther.json") saved successfully"
                     }else{
                         Write-LogError "ERROR: Failed to saved $($Global:JsonPath+"Get-NcNetRoutingGroupRouteOther.json")"
@@ -7077,11 +7078,12 @@ Try {
             }       
         }
         # LIF Treatment
-        if($Backup -eq $False){
+        if($Backup -eq $False)
+        {
             $SecondaryInterface  = Get-NcNetInterface -InterfaceName $PrimaryInterfaceName -VserverContext $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar 
             if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcNetInterface failed [$ErrorVar]" }
 
-            if ( $SecondaryInterface -eq $null ) 
+            if ( $null -eq $SecondaryInterface ) 
             {
                 $ANS1 = 'y' ; $ANS2 = 'n'
                 while ( ( $ANS1 -eq 'y' ) -and ( $ANS2 -eq 'n' ) ) 
@@ -7096,19 +7098,19 @@ Try {
                     if ( $ANS1 -eq 'y' ) 
                     {
                         $BackupOfGateway=""
-                        if( ($Global:NonInteractive -and $ForClone) -and (-not $Global:ForceCloneOriginal.IsPresent) ){
+                        if( ($Global:PreserveIdentity -eq $True) -and (-not $Global:ForceCloneOriginal.IsPresent) ){    
                             $tmp1 = (Get-Random -minimum 0 -maximum 255)
                             $tmp2 = (Get-Random -minimum 1 -maximum 254)
                             $BackupOfGateway=$PrimaryGateway
                             $PrimaryAddress = "169.254.$tmp1.$tmp2"
                             $PrimaryNetMask = "255.255.0.0"
                             $PrimaryGateway = ""
-                            Write-LogWarn "[$workOn] Working in non interactive for clone - creating APIPA address [$PrimaryAddress]"
+                            Write-LogWarn "[$workOn] Working in PreserveIdentity Mode - creating APIPA address [$PrimaryAddress]"
                         }
-                        if( -not ($Global:ForceCloneOriginal.IsPresent)){
-                            $myIpAddr=ask_IpAddr_from_cli -myIpAddr $PrimaryAddress -workOn $workOn
-                            $myNetMask=ask_NetMask_from_cli -myNetMask $PrimaryNetMask -workOn $workOn
-                            $myGateway=ask_gateway_from_cli -myGateway $PrimaryGateway -workOn $workOn
+                        if( -not ($Global:ForceCloneOriginal.IsPresent) -or ($Global:PreserveIdentity -eq $False) ){
+                            $myIpAddr=ask_IpAddr_from_cli -myIpAddr $PrimaryAddress -workOn $workOn -forceAsk $True
+                            $myNetMask=ask_NetMask_from_cli -myNetMask $PrimaryNetMask -workOn $workOn -forceAsk $True
+                            $myGateway=ask_gateway_from_cli -myGateway $PrimaryGateway -workOn $workOn -forceAsk $True
                         }else{
                             $myIpAddr = $PrimaryAddress  
                             $myNetMask = $PrimaryNetMask
@@ -7161,7 +7163,7 @@ Try {
                                         $out=Remove-NcNetRoute -Destination '0.0.0.0/0' -Gateway $Gateway -Vserver $mySecondaryVserver -Confirm:$False -Controller $mySecondaryController  -ErrorVariable ErrorVar
                                         if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Remove-NcNetRoute failed [$ErrorVar]" ; }
                                     }
-                                    if( ( $myGateway -ne $null ) -and ( $myGateway -ne "" ) ){
+                                    if( ( $null -ne $myGateway ) -and ( $myGateway -ne "" ) ){
                                         Write-LogDebug "New-NcNetRoute -Destination '0.0.0.0/0' -Metric 20 -Gateway $myGateway -Vserver $mySecondaryVserver -Controller $mySecondaryController"
                                         $out=New-NcNetRoute -Destination '0.0.0.0/0' -Metric 20 -Gateway $myGateway -Vserver $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar
                                         if ( $? -ne $True ) { $Return = $False ; throw "ERROR: New-NcNetRoute failed [$ErrorVar]" ; }
@@ -7174,10 +7176,10 @@ Try {
                                     $SecondaryDefaultRoute=Get-NcNetRoutingGroupRoute -RoutingGroup $SecondaryRoutingGroupName -Destination '0.0.0.0/0' -Vserver $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar
                                     if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcNetRoutingGroupRoute failed [$ErrorVar]" ; }
                                     $SecondaryGateway=$SecondaryDefaultroute.GatewayAddress
-                                    if ( ( $myGateway -eq $null ) -or ( $myGateway -eq "" )  ) 
+                                    if ( ( $null -eq $myGateway ) -or ( $myGateway -eq "" )  ) 
                                     {
                                         Write-Log "[$workOn] No default Gateway for lif [$PrimaryInterfaceName]"
-                                        if ( $SecondaryGateway -ne $null  ) {
+                                        if ( $null -ne $SecondaryGateway ) {
                                             $ANS3 = Read-HostOptions -question "[$myPrimaryVserver] Do you want to to remove default route [$SecondaryGateway] from Vserver [$mySecondaryVserver] RoutingGroup [$SecondaryRoutingGroupName] ?" -options "y/n" -default "y"
                                             if ( $ANS3 -eq 'y' ) 
                                             {
@@ -7194,7 +7196,7 @@ Try {
                                     {
                                         if (  $myGateway -ne $SecondaryGateway ) 
                                         {
-                                            if ( $SecondaryGateway -ne $null  ) 
+                                            if ( $null -ne $SecondaryGateway ) 
                                             {
                                                 Write-LogDebug "Remove-NcNetRoutingGroupRoute -RoutingGroup $SecondaryRoutingGroupName -Destination '0.0.0.0/0' -Vserver $mySecondaryVserver -Controller $mySecondaryController -Confirm:$False"
                                                 $out=Remove-NcNetRoutingGroupRoute -RoutingGroup $SecondaryRoutingGroupName -Destination '0.0.0.0/0' -Vserver $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar -Confirm:$False
@@ -7204,7 +7206,7 @@ Try {
                                                     $Return = $False
                                                 }
                                             }
-                                            if ( ( $myGateway -ne $null ) -and ( $myGateway -ne "" )  ) {
+                                            if ( ( $null -ne $myGateway ) -and ( $myGateway -ne "" )  ) {
                                                 Write-LogDebug "New-NcNetRoutingGroupRoute -RoutingGroup $SecondaryRoutingGroupName -Destination '0.0.0.0/0' -Gateway $myGateway -Metric $PrimaryDefaultRoute.Metric -Vserver $mySecondaryVserver -Controller $mySecondaryController"
                                                 $out=New-NcNetRoutingGroupRoute -RoutingGroup $SecondaryRoutingGroupName -Destination '0.0.0.0/0' -Gateway $myGateway -Metric $PrimaryDefaultRoute.Metric -Vserver $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar
                                                 if ( $? -ne $True ) { $Return = $False ; throw "ERROR: New-NcNetRoutingGroupRoute failed [$ErrorVar]" ; }
@@ -7254,7 +7256,7 @@ Try {
                         Write-LogDebug "Get-NcNetRoute -Destination $PrimaryOtherDestination -Vserver $mySecondaryVserver -Controller $mySecondaryController"
                         $SecondaryOther=Get-NcNetRoute -Destination $PrimaryOtherDestination -Vserver $mySecondaryVserver -Controller $mySecondaryController -ErrorVariable ErrorVar
                         if ( $? -ne $True ) { $Return = $False ; Write-LogError "ERROR: Get-NcNetRoute failed [$ErrorVar]"; continue }
-                        if ($SecondaryOther -ne $null){
+                        if ( $null -ne $SecondaryOther ){
                             $myGateway=$SecondaryOther.Gateway
                             Write-LogDebug "Remove-NcNetRoute -Destination $PrimaryOtherDestination -Gateway $myGateway -VserverContext $mySecondaryVserver -Controller $mySecondaryController"
                             $ret=Remove-NcNetRoute -Destination $PrimaryOtherDestination -VserverContext $mySecondaryVserver -Gateway $myGateway -Controller $mySecondaryController -ErrorVariable ErroVar -Confirm:$false
@@ -7284,7 +7286,7 @@ Try {
                         Write-LogDebug "Get-NcNetRoutingGroupRoute -Destination $PrimaryOtherDestination -Vserver $mySecondaryVserver -Controller $mySecondaryController"
                         $SecondaryOther=Get-NcNetRoutingGroupRoute -Destination $PrimaryOtherDestination -Vserver $mySecondaryVserver -Controller $mySecondaryController -ErrorVariable ErrorVar
                         if ( $? -ne $True ) { $Return = $False ; Write-LogError "ERROR: Get-NcNetRoutingGroupRoute failed [$ErrorVar]"; continue }
-                        if ($SecondaryOther -ne $null){
+                        if ( $null -ne $SecondaryOther ){
                             $myGateway=$SecondaryOther.GatewayAddress
                             $SecondaryRoutingGroupName=$SecondaryOther.RoutingGroup
                             Write-LogDebug "Remove-NcNetRoutingGroupRoute -RoutingGroup $SecondaryRoutingGroupName -Vserver $mySecondaryVserver -Controller $mySecondaryController"
@@ -8847,13 +8849,12 @@ Try {
             if($TemporarySecondaryCifsIp -and $SecondaryCifsLifMaster){
                 Write-LogDebug "[$workOn] Create tmp lif to join AD [$SecondaryCifsLifMaster][$TemporarySecondaryCifsIp]"
                 $SecondaryCifsLifCreated=$false
-                if($Global:NonInteractive -or $ForClone){
+                if($Global:NonInteractive -or $ForClone -or $Global:PreserveIdentity -eq $True){
                     Write-Log "[$workOn] getting master lif to clone"
                     $InterfaceMasterPrimary = Get-NcNetInterface $SecondaryCifsLifMaster -VserverContext $myPrimaryVserver -Controller $myPrimaryController  -ErrorVariable ErrorVar 
                     $InterfaceMaster = Get-NcNetInterface $SecondaryCifsLifMaster -VserverContext $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar 
                 }
-                if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcNetInterface failed [$ErrorVar]" }
-		        if($InterfaceMaster){
+                if($InterfaceMaster){
 			        $TempInterfaceName=("tmp_lif_to_join_in_ad_" + $InterfaceMaster.InterfaceName)
                     $TempIpAddress=$TemporarySecondaryCifsIp
                     if($Global:NonInteractive -and $ForClone){
@@ -8880,7 +8881,7 @@ Try {
 
 			        $SecondaryInterface  = Get-NcNetInterface -InterfaceName $TempInterfaceName -VserverContext $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar 
 			        if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcNetInterface failed [$ErrorVar]" }
-			        if ( $SecondaryInterface -eq $null ) 
+			        if ( $null -eq $SecondaryInterface ) 
 			        {
                         if( -not ($Global:ForceCloneOriginal.IsPresent) ){
                             Write-LogDebug "Dns Domain is only set during Migrate, ActivateDR, ReActivate or CloneVserverDR with ForceCloneOriginal"
@@ -8908,7 +8909,7 @@ Try {
 
             if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcNetInterface failed [$ErrorVar]" ; }
 
-            if($SecondaryInterfaceList -ne $null)
+            if($null -ne $SecondaryInterfaceList)
             {
 
                 if ( ($SecondaryInterfaceList | Where-Object {$_.OpStatus -eq "up"}).count -ge 1 )
@@ -8920,7 +8921,7 @@ Try {
                 {
                     Write-LogDebug "create_update_CIFS_server_dr : LIF with protocol exist but it's down"
                     $myInterfacesList=$SecondaryInterfaceList | Where-Object {$_.OpStatus -eq "down" -and $_.DataProtocols -match "cifs"}
-                    if($myInterfacesList -eq $null){
+                    if($null -eq $myInterfacesList){
                         Write-Log "[$workOn] No CIFS LIF available on DR vserver"
                         Write-Log "[$workOn] Unable to register CIFS server"
                         Write-Log "[$workOn] Add a CIFS LIF an rerun ConfigureDR"
@@ -8952,13 +8953,16 @@ Try {
                             break
                         }
                     }
-                    if($oneDRLIFupReady -eq $False){
+                    if( (($oneDRLIFupReady -eq $False) -or (($Global:PreserveIdentity -eq $True) -and ($null -eq $Global:TemporarySecondaryCifsIp))) -and (-not $Global:ForceCloneOriginal.IsPresent) ){
                         Write-LogWarn "[$workOn] Impossible to switch DR LIF to up because of duplicate IP address with Source Vserver"
                         Write-LogWarn "[$workOn] Impossible to register CIFS server on DR Vserver"
                         Write-LogWarn "[$workOn] Configure a temporary IP address on DR Vserver to be able to register your CIFS server"
                         $ans = Read-HostOptions -question "[$workOn] I will wait here, so you can create that temp lif.  Is it done ?" -options "y/n" -default "n"
                         if($ans -eq "y"){$oneDRLifupReady=$true}
                     }
+                }
+                if($Global:ForceCloneOriginal.IsPresent){
+                    $oneDRLIFupReady=$True
                 }
                 if($oneDRLIFupReady -eq $True){
 
@@ -8984,7 +8988,7 @@ Try {
                     }
                     Write-logDebug "Add-NcCifsServer -Name $SecondaryCifsServer -Domain $SecondaryDomain -OrganizationalUnit $SecondaryOrganizationalUnit -DefaultSite  $SecondaryDefaultSite -AdminCredential $ADCred -Force -AdministrativeStatus $CIFSAdminState -VserverContext $mySecondaryVserver -Controller $mySecondaryController" 
                     $out = Add-NcCifsServer -Name $SecondaryCifsServer -Domain $SecondaryDomain -OrganizationalUnit $SecondaryOrganizationalUnit -DefaultSite  $SecondaryDefaultSite -AdminCredential $ADCred -Force -AdministrativeStatus $CIFSAdminState -VserverContext $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar
-                    if ( $? -ne $True ) { $AddNcCifsFailed = $true; throw "ERROR: Add-NcCifsServer failed [$ErrorVar]" ; }else{ $AddNcCifsFailed = $false;Write-Log "[$workOn] Cifs server is joined"}
+                    if ( $? -ne $True ) { throw "ERROR: Add-NcCifsServer failed [$ErrorVar]" ; }else{ Write-Log "[$workOn] Cifs server is joined"}
                     if( ($myInterfaceName.Length -gt 0) -and ($Global:RESTORE_ORIGINAL -eq $False -and ( -not ($Global:ForceCloneOriginal.IsPresent))) )
                     {
                         Write-logDebug "Set-NcNetInterface -Name $myInterfaceName -Vserver $mySecondaryVserver -AdministrativeStatus down -Controller $mySecondaryController"
@@ -9039,10 +9043,10 @@ Catch {
 
 #############################################################################################
 Function create_update_CIFS_shares_dr (
-	[NetApp.Ontapi.Filer.C.NcController] $myPrimaryController,
-	[NetApp.Ontapi.Filer.C.NcController] $mySecondaryController,
-	[string] $myPrimaryVserver,
-    [string] $mySecondaryVserver,
+	[NetApp.Ontapi.Filer.C.NcController]$myPrimaryController,
+	[NetApp.Ontapi.Filer.C.NcController]$mySecondaryController,
+	[string]$myPrimaryVserver,
+    [string]$mySecondaryVserver,
     [string]$workOn=$mySecondaryVserver,
     [bool]$Backup,
     [bool]$Restore,
@@ -9833,7 +9837,11 @@ Function show_vserver_dr (
                     $PrimaryGateway=$DefaultRoute.Gateway
                 }
                 $LIF = '['  + $PrimaryStatus + '] [' + $PrimaryInterfaceName + '] [' + $PrimaryAddress + '] [' + $PrimaryNetMask + '] [' + $PrimaryGateway + '] [' + $PrimaryCurrentNode + '] [' + $PrimaryCurrentPort + ']'
-                Format-ColorBrackets "Logical Interface      : $LIF"
+                if($PrimaryStatus -eq "up"){
+                    Format-ColorBrackets -ForceColor Green "Logical Interface      : $LIF"
+                }else{
+                    Format-ColorBrackets -ForceColor Red "Logical Interface      : $LIF"
+                }
             }
 
             # Verify if NFS service is Running if yes the stop it
@@ -9846,15 +9854,18 @@ Function show_vserver_dr (
             {
                 if ( $NfsService.GeneralAccess -eq $True ) 
                 {
-                    Format-ColorBrackets "NFS Services           : [up]"
+                    Format-ColorBrackets -ForceColor Green "NFS Services           : [up]"
                 } 
                 else 
                 {
-                    Format-ColorBrackets "NFS Services           : [down]"
+                    Format-ColorBrackets -ForceColor Red "NFS Services           : [down]"
                 }
             }
             # Verify if CIFS Service is Running if yes stop it
             $CifService = Get-NcCifsServer  -VserverContext  $myPrimaryVserver -Controller $myPrimaryController  -ErrorVariable ErrorVar
+            $CifServerName=$CifService.CifsServer
+            $CifServerDomain=$CifService.Domain
+            $CifServerOU=$CifService.OrganizationalUnit
             if ( $CifService -eq $null ) 
             {
                 Format-ColorBrackets "CIFS Services          : [no]"
@@ -9863,11 +9874,13 @@ Function show_vserver_dr (
             {
                 if ( $CifService.AdministrativeStatus -eq 'up' ) 
                 {
-                    Format-ColorBrackets "CIFS Services          : [up]"
+                    $CIFSSTATUS= '[up] ['+$CifServerName+'] ['+$CifServerDomain+'] ['+$CifServerOU+']'
+                    Format-ColorBrackets -ForceColor Green "CIFS Services          : $CIFSSTATUS"
                 } 
                 else 
                 {
-                    Format-ColorBrackets "CIFS Services          : [down]"
+                    $CIFSSTATUS= '[down] ['+$CifServerName+'] ['+$CifServerDomain+'] ['+$CifServerOU+']'
+                    Format-ColorBrackets -ForceColor Red "CIFS Services          : $CIFSSTATUS"
                 }
             }
             # Verify if ISCSI service is Running if yes the stop it
@@ -9880,11 +9893,11 @@ Function show_vserver_dr (
             {
                 if ( $IscsiService.IsAvailable -eq $True ) 
                 {
-                    Format-ColorBrackets "ISCSI Services         : [up]"
+                    Format-ColorBrackets -ForceColor Green "ISCSI Services         : [up]"
                 } 
                 else 
                 {
-                    Format-ColorBrackets "ISCSI Services         : [down]"
+                    Format-ColorBrackets -ForceColor Red "ISCSI Services         : [down]"
                 }
             }
             Write-Log ""
@@ -9943,39 +9956,48 @@ Function show_vserver_dr (
                     $SecondaryGateway=$DefaultRoute.Gateway    
                 }
                 $LIF = '['  + $SecondaryStatus + '] [' + $SecondaryInterfaceName + '] [' + $SecondaryAddress + '] [' + $SecondaryNetMask + '] [' + $SecondaryGateway + '] [' + $SecondaryCurrentNode + '] [' + $SecondaryCurrentPort + ']' 
-                Format-ColorBrackets "Logical Interface      : $LIF"
+                if($SecondaryStatus -eq "up"){
+                    Format-ColorBrackets -ForceColor Green "Logical Interface      : $LIF"
+                }else{
+                    Format-ColorBrackets -ForceColor Red "Logical Interface      : $LIF"
+                }
             }
             # Verify if NFS service is Running if yes the stop it
             $NfsService = Get-NcNfsService -VserverContext  $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar
-            if ( $NfsService -eq $null ) {
+            if ( $null -eq $NfsService ) {
                 Format-ColorBrackets "NFS Services           : [no]"
             } else {
                 if ( $NfsService.GeneralAccess -eq $True ) {
-                    Format-ColorBrackets "NFS Services           : [up]"
+                    Format-ColorBrackets -ForceColor Green "NFS Services           : [up]"
                 } else {
-                    Format-ColorBrackets "NFS Services           : [down]"
+                    Format-ColorBrackets -ForceColor Red "NFS Services           : [down]"
                 }
             }
             # Verify if CIFS Service is Running if yes stop it
             $CifService = Get-NcCifsServer  -VserverContext  $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar
-            if ( $CifService -eq $null ) {
+            $CifServerName=$CifService.CifsServer
+            $CifServerDomain=$CifService.Domain
+            $CifServerOU=$CifService.OrganizationalUnit
+            if ( $null -eq $CifService ) {
                 Format-ColorBrackets "CIFS Services          : [no]"
             } else {
                 if ( $CifService.AdministrativeStatus -eq 'up' ) {
-                    Format-ColorBrackets "CIFS Services          : [up]"
+                    $CIFSSTATUS= '[up] ['+$CifServerName+'] ['+$CifServerDomain+'] ['+$CifServerOU+']'
+                    Format-ColorBrackets -ForceColor Green "CIFS Services          : $CIFSSTATUS"
                 } else {
-                    Format-ColorBrackets "CIFS Services          : [down]"
+                    $CIFSSTATUS= '[down] ['+$CifServerName+'] ['+$CifServerDomain+'] ['+$CifServerOU+']'
+                    Format-ColorBrackets -ForceColor Red "CIFS Services          : $CIFSSTATUS"
                 }
             }
             # Verify if ISCSI service is Running if yes the stop it
             $IscsiService = Get-NcIscsiService -VserverContext  $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar
-            if ( $IscsiService -eq $null ) {
+            if ( $null -eq $IscsiService ) {
                 Format-ColorBrackets "ISCSI Services         : [no]"
             } else {
                 if ( $IscsiService.IsAvailable -eq $True ) {
-                    Format-ColorBrackets "ISCSI Services         : [up]"
+                    Format-ColorBrackets -ForceColor Green "ISCSI Services         : [up]"
                 } else {
-                    Format-ColorBrackets "ISCSI Services         : [down]"
+                    Format-ColorBrackets -ForceColor Red "ISCSI Services         : [down]"
                 }
             }
             Write-Log ""
@@ -10616,7 +10638,7 @@ Try {
                 }
             }
         }
-        if((-not $Global:NonInteractive) -or ($Global:DefaultLocalUserCredentials -ne $null)){ # skip on interactive or no default creds
+        if((-not $Global:NonInteractive) -or ($null -ne $Global:DefaultLocalUserCredentials)){ # skip on interactive or no default creds
             if ( ( $ret=update_cifs_usergroup -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $workOn  -Backup $runBackup -Restore $runRestore) -ne $True ) {
 			    Write-LogError "ERROR: update_cifs_usergroup failed" 
 			    $Return=$False			
@@ -11421,7 +11443,8 @@ Function migrate_lif (
     [NetApp.Ontapi.Filer.C.NcController] $myPrimaryController,
 	[NetApp.Ontapi.Filer.C.NcController] $mySecondaryController,
     [string] $myPrimaryVserver,
-	[string] $mySecondaryVserver) {
+    [string] $mySecondaryVserver,
+    [bool] $PreserveIdentity) {
 try{    
     $Return = $True
 
@@ -11448,23 +11471,37 @@ try{
         {
             $Return = $False ; throw "ERROR: Get-NcNetInterface failed [$ErrorVar]"
         }
-        if($LIFinformation -ne $null){
+        if($null -ne $LIFinformation){
             $LIFaddress=$LIFinformation.Address
             $LIFnetmask=$LIFinformation.Netmask
             $LIFdomain=$LIFinformation.DnsDomainName
-            Write-Log "[$mySecondaryVserver] Set [$LIFname] down on [$myPrimaryVserver]"
-            Write-LogDebug "Set-NcNetInterface -Name $LIFname -AdministrativeStatus down -DnsDomain temp.domain -Vserver $myPrimaryVserver -Controller $myPrimaryController"
-            $out=Set-NcNetInterface -Name $LIFname -AdministrativeStatus down DnsDomain "temp.domain" -Vserver $myPrimaryVserver -Controller $myPrimaryController  -ErrorVariable ErrorVar
+            Write-Log "[$myPrimaryVserver] Set [$LIFname] down"
+            <# Write-LogDebug "Set-NcNetInterface -Name $LIFname -AdministrativeStatus down -DnsDomain temp.domain -Vserver $myPrimaryVserver -Controller $myPrimaryController"
+            $out=Set-NcNetInterface -Name $LIFname -AdministrativeStatus down -DnsDomain "temp.domain" -Vserver $myPrimaryVserver -Controller $myPrimaryController  -ErrorVariable ErrorVar #>
+            Write-LogDebug "Set-NcNetInterface -Name $LIFname -AdministrativeStatus down -Vserver $myPrimaryVserver -Controller $myPrimaryController"
+            $out=Set-NcNetInterface -Name $LIFname -AdministrativeStatus down -Vserver $myPrimaryVserver -Controller $myPrimaryController  -ErrorVariable ErrorVar
             if ( $? -ne $True ) 
             {
                 $Return = $False ; throw "ERROR: Set-NcNetInterface failed [$ErrorVar]"
             }
-            Write-Log "[$mySecondaryVserver] Set [$LIFname] up with [$LIFaddress] [$LIFnetmask] [$LIFdomain] on [$mySecondaryVserver]"
-            Write-LogDebug "Set-NcNetInterface -Name $LIFname -DnsDomain $LIFdomain -AdministrativeStatus up -Vserver $mySecondaryVserver -Controller $mySecondaryController"
-            $out=Set-NcNetInterface -Name $LIFname -Address $LIFaddress -Netmask $LIFnetmask -DnsDomain $LIFdomain -AdministrativeStatus up -Vserver $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar
-            if ( $? -ne $True )
-            {
+            if($PreserveIdentity -eq $True){
+                Write-Log "[$mySecondaryVserver] Set [$LIFname] up with [$LIFaddress] [$LIFnetmask] [$LIFdomain]"
+                Write-LogDebug "Set-NcNetInterface -Name $LIFname -Address $LIFaddress -Netmask $LIFnetmask -DnsDomain $LIFdomain -AdministrativeStatus up -Vserver $mySecondaryVserver -Controller $mySecondaryController"
+                $out=Set-NcNetInterface -Name $LIFname -Address $LIFaddress -Netmask $LIFnetmask -DnsDomain $LIFdomain -AdministrativeStatus up -Vserver $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar
+                if ( $? -ne $True )
+                {
+                    $Return = $False ; throw "ERROR: Set-NcNetInterface failed [$ErrorVar]"    
                 $Return = $False ; throw "ERROR: Set-NcNetInterface failed [$ErrorVar]"    
+                    $Return = $False ; throw "ERROR: Set-NcNetInterface failed [$ErrorVar]"    
+                }
+            }else{
+                Write-Log "[$mySecondaryVserver] Set [$LIFname] up"
+                Write-LogDebug "Set-NcNetInterface -Name $LIFname -AdministrativeStatus up -Vserver $mySecondaryVserver -Controller $mySecondaryController"
+                $out=Set-NcNetInterface -Name $LIFname -AdministrativeStatus up -Vserver $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar
+                if ( $? -ne $True )
+                {
+                    $Return = $False ; throw "ERROR: Set-NcNetInterface failed [$ErrorVar]"    
+                }    
             }
         }
     }
@@ -11494,6 +11531,7 @@ try{
         Write-LogDebug "Remove-NcNetRoute -Destination 0.0.0.0/0 -Gateway $SecondaryGW -VserverContext $mySecondaryVserver -controller $mySecondaryController"
         $out=Remove-NcNetRoute -Destination 0.0.0.0/0 -Gateway $SecondaryGW -VserverContext $mySecondaryVserver -controller $mySecondaryController  -ErrorVariable ErrorVar -Confirm:$False
     }
+    return $Return
 } 
 Catch {
     handle_error $_ $myPrimaryVserver
@@ -11508,22 +11546,18 @@ Function migrate_cifs_server (
 	[NetApp.Ontapi.Filer.C.NcController] $mySecondaryController,
     [string] $myPrimaryVserver,
 	[string] $mySecondaryVserver,
-    [switch] $NoInteractive) {
+    [switch] $NoInteractive,
+    [bool] $PreserveIdentity) {
 try{    
     $Return = $True
     Write-LogDebug "migrate_cifs_server: start"
-    $myPrimaryCluster = (Get-NcCluster -Controller $myPrimaryController  -ErrorVariable ErrorVar).ClusterName			
-	if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcCluster failed [$ErrorVar]" }
-	$mySecondaryCluster = (Get-NcCluster -Controller $mySecondaryController  -ErrorVariable ErrorVar).ClusterName			
-	if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcCluster failed [$ErrorVar]" }
-
     Write-LogDebug "Get-NcCifsServer -VserverContext $myPrimaryVserver -Controller $myPrimaryController"
 	$serverExist=Get-NcCifsServer -VserverContext $myPrimaryVserver -Controller $myPrimaryController  -ErrorVariable ErrorVar
     if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcCifsServer failed [$ErrorVar]" }
-    if($serverExist -eq $null){Write-LogDebug "No CIFS server, skip"; return $Return}
+    if($null -eq $serverExist){Write-LogDebug "No CIFS server, skip"; return $Return}
     else{
         if($NoInteractive -eq $False){
-            $ANS=Read-HostOptions -question "Set CIFS server down on [$myPrimaryVserver]. Do you want to continue ?" -options "y/n" -default "y"
+            $ANS=Read-HostOptions -question "[$myPrimaryVserver] Set CIFS server down. Do you want to continue ?" -options "y/n" -default "y"
             if($ANS -ne 'y'){Write-LogDebug "Exit Migrate CIFS server: Not ready";return $False}
         }
         Write-LogDebug "Get-NcCifsServer -VserverContext $myPrimaryVserver -Controller $myPrimaryController"
@@ -11532,13 +11566,22 @@ try{
         $PrimaryCIFSdomain=$PrimaryCIFSserver.Domain
         $ADCred=get_local_cred($PrimaryCIFSdomain)
         Write-Log "[$myPrimaryVserver] Set CIFS server down"
-        Write-LogDebug "Set-NcCifsServer -AdministrativeStatus down -Domain $PrimaryCIFSdomain -AdminCredential $ADCred -VserverContext $myPrimaryVserver -controller $myPrimaryController"
-        $out=Set-NcCifsServer -AdministrativeStatus down -Domain $PrimaryCIFSdomain -AdminCredential $ADCred -VserverContext $myPrimaryVserver -controller $myPrimaryController  -ErrorVariable ErrorVar
-        if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Set-NcCifsServer failed [$ErrorVar]" }
-        Write-Log "[$mySecondaryVserver] Set CIFS server up with identity of [$myPrimaryVserver] : [$PrimaryCIFSidentity]"
-        Write-LogDebug "Set-NcCifsServer -AdministrativeStatus up -ForceAccountOverwrite -CifsServer $PrimaryCIFSidentity -Domain $PrimaryCIFSdomain -AdminCredential $ADCred -VserverContext $mySecondaryVserver -controller $mySecondaryController"
-        $out=Set-NcCifsServer -AdministrativeStatus up -ForceAccountOverwrite -CifsServer $PrimaryCIFSidentity -Domain $PrimaryCIFSdomain -AdminCredential $ADCred -VserverContext $mySecondaryVserver -controller $mySecondaryController  -ErrorVariable ErrorVar  -Confirm:$False
-        if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Set-NcCifsServer failed [$ErrorVar]" }
+        Write-LogDebug "Stop-NcCifsServer -VserverContext $myPrimaryVserver -controller $myPrimaryController"
+        $out=Stop-NcCifsServer -VserverContext $myPrimaryVserver -controller $myPrimaryController  -ErrorVariable ErrorVar -Confirm:$False
+        if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Stop-NcCifsServer failed [$ErrorVar]" }
+        if($PreserveIdentity -eq $True){
+            Write-Log "[$mySecondaryVserver] Set CIFS server up with identity of [$myPrimaryVserver] : [$PrimaryCIFSidentity]"
+            Write-LogDebug "Set-NcCifsServer -AdministrativeStatus up -ForceAccountOverwrite -CifsServer $PrimaryCIFSidentity -Domain $PrimaryCIFSdomain -AdminCredential $ADCred -VserverContext $mySecondaryVserver -controller $mySecondaryController"
+            $out=Set-NcCifsServer -AdministrativeStatus up -ForceAccountOverwrite -CifsServer $PrimaryCIFSidentity -Domain $PrimaryCIFSdomain -AdminCredential $ADCred -VserverContext $mySecondaryVserver -controller $mySecondaryController  -ErrorVariable ErrorVar  -Confirm:$False
+            if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Set-NcCifsServer failed [$ErrorVar]" }
+        }else{
+            $SecondaryCIFSserver=Get-NcCifsServer -VserverContext $mySecondaryVserver -Controller $mySecondaryController  -ErrorVariable ErrorVar
+            $SecondaryCIFSidentity=$SecondaryCIFSserver.CIFSServer
+            Write-Log "[$mySecondaryVserver] Set CIFS server up with identity [$SecondaryCIFSidentity]"
+            Write-LogDebug "Start-NcCifsServer -VserverContext $mySecondaryVserver -Controller $mySecondaryController"
+            $out=Start-NcCifsServer -VserverContext $mySecondaryVserver -Controller $mySecondaryController -ErrorVariable ErrorVar 
+            if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Start-NcCifsServer failed [$ErrorVar]" }                
+        }
     }
 
 } Catch {
@@ -12008,7 +12051,7 @@ Function update_vserver_dr (
 		Write-LogError "ERROR: create_update_ISCSI_dr failed" 
 		$Return = $False 
 	}
-	if ( ( create_update_CIFS_shares_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -FromReactivate ($FromReactivate.IsPresent) ) -ne $True ) {
+	if ( ( create_update_CIFS_shares_dr -myPrimaryController $myPrimaryController -mySecondaryController $mySecondaryController -myPrimaryVserver $myPrimaryVserver -mySecondaryVserver $mySecondaryVserver -workOn $mySecondaryVserver -FromReactivate ($FromReactivate.IsPresent) ) -ne $True ) {
 		Write-LogError "ERROR: create_update_CIFS_share failed" 
 		$Return = $False 
 	}
@@ -12363,7 +12406,7 @@ Function activate_vserver_dr (
 		$NeedCIFS=$False
         # remove dest CIFS server
         # rename dest CIFS server
-		if ( (Get-NcCifsServer -VserverContext $currentPassiveVserver -Controller $NcCurrentPassiveCtrl -ErrorVariable ErrorVar) -ne $null ){
+		if ( $null -ne (Get-NcCifsServer -VserverContext $currentPassiveVserver -Controller $NcCurrentPassiveCtrl -ErrorVariable ErrorVar) ){
             <# Write-Log "[$currentPassiveVserver] Remove CIFS server"
 			Write-LogDebug "Stop-NcCifsServer -VserverContext $currentPassiveVserver -Controller $NcCurrentPassiveCtrl"
 			$ret=Stop-NcCifsServer -VserverContext $currentPassiveVserver -Controller $NcCurrentPassiveCtrl -ErrorVariable ErrorVar -Confirm:$False
@@ -12372,20 +12415,26 @@ Function activate_vserver_dr (
 			$ret=Remove-NcCifsServer -VserverContext $currentPassiveVserver -ForceAccountDelete -Controller $NcCurrentPassiveCtrl -Confirm:$False -ErrorVariable ErrorVar
 			if($? -ne $True){$Return = $False; throw "ERROR: failed to remove secondary CIFS server"}	 #>
 			$NeedCIFS=$True
-		}
-        # modify active LIF oin secondary with primary settings
-        Write-Log "[$currentPassiveVserver] Modify LIF"
-		if( ($ret=Set_LIF_from_JSON -ToNcController $NcCurrentPassiveCtrl -ToVserver $currentPassiveVserver -fromSrc) -eq $False ){
-			Throw "ERROR: Failed to set IP address on [$currentPassiveVserver]"	
+        }
+        if( $Global:PreserveIdentity -eq $True ){
+            # modify active LIF on secondary with primary settings
+            Write-Log "[$currentPassiveVserver] Modify LIF"
+            if( ($ret=Set_LIF_from_JSON -ToNcController $NcCurrentPassiveCtrl -ToVserver $currentPassiveVserver -fromSrc) -eq $False ){
+                Throw "ERROR: Failed to set IP address on [$currentPassiveVserver]"	
+			    Throw "ERROR: Failed to set IP address on [$currentPassiveVserver]"	
+                Throw "ERROR: Failed to set IP address on [$currentPassiveVserver]"	
+            }
         }
 		if($NeedCIFS){
-            #add new cifs server with primary identity on active
-            Write-Log "[$currentPassiveVserver] Register new CIFS server"
-			<# if( ($ret=Add_CIFS_from_JSON -ToNcController $NcCurrentPassiveCtrl -ToVserver $currentPassiveVserver -fromSrc) -eq $False ){
-				Throw "ERROR: Failed to add new CIFS server on [$currentPassiveVserver]"
-            } #>
-            if( ($ret=Set_CIFS_from_JSON -ToNcController $NcCurrentPassiveCtrl -ToVserver $currentPassiveVserver -fromSrc) -eq $False ){
-				Throw "ERROR: Failed to set new CIFS server on [$currentPassiveVserver]"
+            if( $Global:PreserveIdentity -eq $True ){
+                #add new cifs server with primary identity on active
+                Write-Log "[$currentPassiveVserver] Register new CIFS server"
+                <# if( ($ret=Add_CIFS_from_JSON -ToNcController $NcCurrentPassiveCtrl -ToVserver $currentPassiveVserver -fromSrc) -eq $False ){
+                    Throw "ERROR: Failed to add new CIFS server on [$currentPassiveVserver]"
+                } #>
+                if( ($ret=Set_CIFS_from_JSON -ToNcController $NcCurrentPassiveCtrl -ToVserver $currentPassiveVserver -fromSrc) -eq $False ){
+                    Throw "ERROR: Failed to set new CIFS server on [$currentPassiveVserver]"
+                }
             }
         }
         # enable services on secondary
@@ -12394,7 +12443,7 @@ Function activate_vserver_dr (
             $Return = $False
         }
 	}else{
-        $ANS=Read-HostOptions -question "Do You really want to activate SVM [$currentPassiveVserver] from cluster [$currentPassiveController] `r`n[$currentPassiveVserver] will take source's identity and services ?" -options "y/n" -default "y"
+        $ANS=Read-HostOptions -question "Do You really want to activate SVM [$currentPassiveVserver] from cluster [$currentPassiveController] `r`nServices will switch from [$currentActiveVserver] to [$currentPassiveVserver] ?" -options "y/n" -default "y"
         if ( $ANS -ne 'y' ) {
             Write-LogDebug "activate_vserver_dr: end"
             Write-Log "[$currentPassiveVserver] Activation aborted"
@@ -12412,28 +12461,32 @@ Function activate_vserver_dr (
 			Write-LogError "ERROR: Unable to Connect to NcController [$currentActiveController]" 
 				clean_and_exit 1
 		}
-		$NeedCIFS=$False
-		# remove primary CIFS server
-		if ( (Get-NcCifsServer -VserverContext $currentActiveVserver -Controller $NcCurrentActiveCtrl -ErrorVariable ErrorVar) -ne $null ){
-            Write-Log "[$currentActiveVserver] Remove CIFS server"
-			Write-LogDebug "Stop-NcCifsServer -VserverContext $currentActiveVserver -Controller $NcCurrentActiveCtrl"
-			$ret=Stop-NcCifsServer -VserverContext $currentActiveVserver -Controller $NcCurrentActiveCtrl -ErrorVariable ErrorVar -Confirm:$False
-			if($? -ne $True){$Return = $False; throw "ERROR: failed to stop secondary CIFS server"}
-			Write-LogDebug "Remove-NcCifsServer -VserverContext $currentActiveVserver -ForceAccountDelete -Controller $NcCurrentActiveCtrl"
-			$ret=Remove-NcCifsServer -VserverContext $currentActiveVserver -ForceAccountDelete -Controller $NcCurrentActiveCtrl -Confirm:$False -ErrorVariable ErrorVar
+        $NeedCIFS=$False
+        if( $Global:PreserveIdentity -eq $True ){
+            # remove primary CIFS server
+            if ( $null -ne (Get-NcCifsServer -VserverContext $currentActiveVserver -Controller $NcCurrentActiveCtrl -ErrorVariable ErrorVar) ){
+                Write-Log "[$currentActiveVserver] Remove CIFS server"
+                Write-LogDebug "Stop-NcCifsServer -VserverContext $currentActiveVserver -Controller $NcCurrentActiveCtrl"
+                $ret=Stop-NcCifsServer -VserverContext $currentActiveVserver -Controller $NcCurrentActiveCtrl -ErrorVariable ErrorVar -Confirm:$False
+                if($? -ne $True){$Return = $False; throw "ERROR: failed to stop secondary CIFS server"}
+                Write-LogDebug "Remove-NcCifsServer -VserverContext $currentActiveVserver -ForceAccountDelete -Controller $NcCurrentActiveCtrl"
+                $ret=Remove-NcCifsServer -VserverContext $currentActiveVserver -ForceAccountDelete -Controller $NcCurrentActiveCtrl -Confirm:$False -ErrorVariable ErrorVar
+                if($? -ne $True){$Return = $False; throw "ERROR: failed to remove secondary CIFS server"}	
 			if($? -ne $True){$Return = $False; throw "ERROR: failed to remove secondary CIFS server"}	
-			$NeedCIFS=$True
-		}
-		# remove LIF on Primary
-		Get-NcNetInterface -VserverContext $currentActiveVserver -Controller $NcCurrentActiveCtrl -Role "data" | foreach {
-            $lifname=$_.InterfaceName
-            Write-Log "[$currentActiveVserver] Remove LIF [$lifname]"
-			Write-LogDebug "Set-NcNetInterface -Name $lifname -Vserver $currentActiveVserver -AdministrativeStatus down"
-			$ret=Set-NcNetInterface -Name $lifname -Vserver $currentActiveVserver -AdministrativeStatus "down" -Controller $NcCurrentActiveCtrl
-			if($? -ne $True){$Return = $False; throw "ERROR: failed to set down lif [$lifname] on [$currentActiveVserver]"}
-			Write-LogDebug "Remove-NcNetInterface -Name $lifname -Vserver $currentActiveVserver -Controller $NcCurrentActiveCtrl"
-			$ret=Remove-NcNetInterface -Name $lifname -Vserver $currentActiveVserver -Controller $NcCurrentActiveCtrl -Confirm:$False
-			if($? -ne $True){$Return = $False; throw "ERROR: failed to remove CIFS server on [$currentActiveVserver]"}
+                if($? -ne $True){$Return = $False; throw "ERROR: failed to remove secondary CIFS server"}	
+                $NeedCIFS=$True
+            }
+            # remove LIF on Primary
+            Get-NcNetInterface -VserverContext $currentActiveVserver -Controller $NcCurrentActiveCtrl -Role "data" | ForEach-Object {
+                $lifname=$_.InterfaceName
+                Write-Log "[$currentActiveVserver] Remove LIF [$lifname]"
+                Write-LogDebug "Set-NcNetInterface -Name $lifname -Vserver $currentActiveVserver -AdministrativeStatus down"
+                $ret=Set-NcNetInterface -Name $lifname -Vserver $currentActiveVserver -AdministrativeStatus "down" -Controller $NcCurrentActiveCtrl
+                if($? -ne $True){$Return = $False; throw "ERROR: failed to set down lif [$lifname] on [$currentActiveVserver]"}
+                Write-LogDebug "Remove-NcNetInterface -Name $lifname -Vserver $currentActiveVserver -Controller $NcCurrentActiveCtrl"
+                $ret=Remove-NcNetInterface -Name $lifname -Vserver $currentActiveVserver -Controller $NcCurrentActiveCtrl -Confirm:$False
+                if($? -ne $True){$Return = $False; throw "ERROR: failed to remove CIFS server on [$currentActiveVserver]"}
+            }
         }
         Write-Log "[$currentActiveVserver] stop Vserver"
 		Write-LogDebug "Stop-NcVserver -Name $currentActiveVserver -Controller $NcCurrentActiveCtrl"
@@ -12448,18 +12501,24 @@ Function activate_vserver_dr (
 			Write-LogDebug "Remove-NcCifsServer -VserverContext $currentPassiveVserver -ForceAccountDelete -Controller $NcCurrentPassiveCtrl"
 			$ret=Remove-NcCifsServer -VserverContext $currentPassiveVserver -ForceAccountDelete -Controller $NcCurrentPassiveCtrl -Confirm:$False -ErrorVariable ErrorVar
 			if($? -ne $True){$Return = $False; throw "ERROR: failed to remove secondary CIFS server"}	
-		} #>
-        # modify secondary LIF with primary settings
-        Write-Log "[$currentPassiveVserver] Modify LIF"
-		if( ($ret=Set_LIF_from_JSON -ToNcController $NcCurrentPassiveCtrl -ToVserver $currentPassiveVserver -fromSrc) -eq $False ){
+        } #>
+        if( $Global:PreserveIdentity -eq $True ){
+            # modify secondary LIF with primary settings
+            Write-Log "[$currentPassiveVserver] Modify LIF"
+            if( ($ret=Set_LIF_from_JSON -ToNcController $NcCurrentPassiveCtrl -ToVserver $currentPassiveVserver -fromSrc) -eq $False ){
+                Throw "ERROR: Failed to set IP address on [$currentPassiveVserver]"	
 			Throw "ERROR: Failed to set IP address on [$currentPassiveVserver]"	
-		}
+                Throw "ERROR: Failed to set IP address on [$currentPassiveVserver]"	
+            }
+        }
 		if($NeedCIFS){
-            #add new secondary cifs with primary identity
-            Write-Log "[$currentPassiveVserver] Register new CIFS server"
-			if( ($ret=Set_CIFS_from_JSON -ToNcController $NcCurrentPassiveCtrl -ToVserver $currentPassiveVserver -fromSrc) -eq $False ){
-				Throw "ERROR: Failed to add new CIFS server on [$currentPassiveVserver]"
-			}
+            if( $Global:PreserveIdentity -eq $True ){
+                #add secondary cifs with primary identity
+                Write-Log "[$currentPassiveVserver] Register new CIFS server"
+                if( ($ret=Set_CIFS_from_JSON -ToNcController $NcCurrentPassiveCtrl -ToVserver $currentPassiveVserver -fromSrc) -eq $False ){
+                    Throw "ERROR: Failed to add new CIFS server on [$currentPassiveVserver]"
+                }
+            }
 		}
 	}
 	if ( ( $ret=enable_network_protocol_vserver_dr -myNcController $NcCurrentPassiveCtrl -myVserver $currentPassiveVserver ) -ne $True ) {
@@ -13709,6 +13768,7 @@ Function Set_CIFS_from_JSON (
             throw "ERROR: Unable to read [$CIFSINFO_FILE]"
         }
         $oldCIFS=Get-NcCifsServer -VserverContext $ToVserver -Controller $ToNcController -ErrorVariable ErrorVar
+        $oldCIFSName=$oldCIFS.CifsServer
         if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Get-NcCifsServer failed [$ErrorVar]" }
         $oldCIFSNetbiosAliases=$oldCIFS.NetbiosAliases
         $oldCIFSState=$oldCIFS.AdministrativeStatus
@@ -13724,13 +13784,17 @@ Function Set_CIFS_from_JSON (
         $newCIFSDomain=$newCIFS.Domain
         $newCIFSDefaultSite=$newCIFS.DefaultSite
         $ADCred = get_local_cred ($newCIFSDomain)
-        Write-Log "[$ToVserver] Set CIFS server up with identity [$newCIFSName]"
         if ($oldCIFSNetbiosAliases -eq $newCIFSNetbiosAliases){
             $oldCIFSNetbiosAliases=""
         }
-        Write-LogDebug "Set-NcCifsServer -AdministrativeStatus up -ForceAccountOverwrite -CifsServer $newCIFSName -Ou $newCIFSOU -AddNetbiosAlias $newCIFSNetbiosAliases -RemoveNetbiosAlias $oldCIFSNetbiosAliases -DefaultSite $newCIFSDefaultSite -Domain $newCIFSDomain -AdminCredential $ADCred -VserverContext $ToVserver -controller $ToNcController"
-        $out=Set-NcCifsServer -AdministrativeStatus up -ForceAccountOverwrite -CifsServer $newCIFSName -Ou $newCIFSOU -AddNetbiosAlias $newCIFSNetbiosAliases -RemoveNetbiosAlias $oldCIFSNetbiosAliases -DefaultSite $newCIFSDefaultSite -Domain $newCIFSDomain -AdminCredential $ADCred -VserverContext $ToVserver -controller $ToNcController  -ErrorVariable ErrorVar  -Confirm:$False
-        if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Set-NcCifsServer failed [$ErrorVar]" }
+        if($newCIFSName -ne $oldCIFSName){
+            Write-Log "[$ToVserver] Set CIFS server up with identity [$newCIFSName]"
+            Write-LogDebug "Set-NcCifsServer -AdministrativeStatus up -ForceAccountOverwrite -CifsServer $newCIFSName -Ou $newCIFSOU -AddNetbiosAlias $newCIFSNetbiosAliases -RemoveNetbiosAlias $oldCIFSNetbiosAliases -DefaultSite $newCIFSDefaultSite -Domain $newCIFSDomain -AdminCredential $ADCred -VserverContext $ToVserver -controller $ToNcController"
+            $out=Set-NcCifsServer -AdministrativeStatus up -ForceAccountOverwrite -CifsServer $newCIFSName -Ou $newCIFSOU -AddNetbiosAlias $newCIFSNetbiosAliases -RemoveNetbiosAlias $oldCIFSNetbiosAliases -DefaultSite $newCIFSDefaultSite -Domain $newCIFSDomain -AdminCredential $ADCred -VserverContext $ToVserver -controller $ToNcController  -ErrorVariable ErrorVar  -Confirm:$False
+            if ( $? -ne $True ) { $Return = $False ; throw "ERROR: Set-NcCifsServer failed [$ErrorVar]" }
+        }else{
+            Write-LogDebug "CIFS server already with good name. No need to modify"
+        }
         Write-LogDebug "Set_CIFS_from_JSON: end"
         return $True
     }catch{
@@ -13765,14 +13829,23 @@ Function Add_CIFS_from_JSON (
         $CIFS=Get-Content $CIFSINFO_FILE -Raw | ConvertFrom-Json
         $CIFSName=$CIFS.CifsServer
         $CIFSOU=$CIFS.OrganizationalUnit
-        $CIFSNetbiosAliases=$CIFS.NetbiosAliases
+        #$CIFSNetbiosAliases=$CIFS.NetbiosAliases
         $CIFSDomain=$CIFS.Domain
         $CIFSDefaultSite=$CIFS.DefaultSite
-        $CIFSNetbiosAliases=$CIFS.NetbiosAliases
+        #$CIFSNetbiosAliases=$CIFS.NetbiosAliases
         $ADCred = get_local_cred ($CIFSDomain)
-        Write-logDebug "Add-NcCifsServer -Name $CIFSName -Domain $CIFSDomain -OrganizationalUnit $CIFSOU -DefaultSite  $CIFSDefaultSite -AdminCredential $ADCred -Force -AdministrativeStatus down -VserverContext $ToVserver -Controller $ToNcController" 
-        $out = Add-NcCifsServer -Name $CIFSName -Domain $CIFSDomain -OrganizationalUnit $CIFSOU -DefaultSite  $CIFSDefaultSite -AdminCredential $ADCred -Force -AdministrativeStatus down -VserverContext $ToVserver -Controller $ToNcController  -ErrorVariable ErrorVar
-        if ( $? -ne $True ) { $AddNcCifsFailed = $true; throw "ERROR: Add-NcCifsServer failed [$ErrorVar]" }else{ $AddNcCifsFailed = $false;Write-Log "[$ToVserver] Cifs server [$CIFSName] is joined"}
+        $CifsServerOnSource=Get-NcCifsServer -VserverContext $ToVserver -Controller $ToNcController  -ErrorVariable ErrorVar
+        if($null -eq $CifsServerOnSource){ 
+            Write-logDebug "Add-NcCifsServer -Name $CIFSName -Domain $CIFSDomain -OrganizationalUnit $CIFSOU -DefaultSite  $CIFSDefaultSite -AdminCredential $ADCred -Force -AdministrativeStatus down -VserverContext $ToVserver -Controller $ToNcController" 
+            $out = Add-NcCifsServer -Name $CIFSName -Domain $CIFSDomain -OrganizationalUnit $CIFSOU -DefaultSite  $CIFSDefaultSite -AdminCredential $ADCred -Force -AdministrativeStatus down -VserverContext $ToVserver -Controller $ToNcController  -ErrorVariable ErrorVar
+            if ( $? -ne $True ) { throw "ERROR: Add-NcCifsServer failed [$ErrorVar]" }else{Write-Log "[$ToVserver] Cifs server [$CIFSName] joined"}
+        }elseif($CifsServerOnSource.AdministrativeStatus -eq "down" -and $CifsServerOnSource.CifsServer -eq $CIFSName){
+            Write-logDebug "Start-NcCifsServer -VserverContext $ToVserver -Controller $ToNcController" 
+            $out = Start-NcCifsServer -VserverContext $ToVserver -Controller $ToNcController  -ErrorVariable ErrorVar
+            if ( $? -ne $True ) { throw "ERROR: Add-NcCifsServer failed [$ErrorVar]" }else{Write-Log "[$ToVserver] Cifs server [$CIFSName] started"}    
+        }elseif($CifsServerOnSource.CifsServer -ne $CIFSName){
+            Write-LogWarn "CIFS server on source is already started, but with different identity ["+$CifsServerOnSource.CifsServer+"]"    
+        }
         Write-LogDebug "Add_CIFS_from_JSON: end"
         return $True
     }catch{

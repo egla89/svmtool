@@ -1,0 +1,732 @@
+[
+    {
+        "AttributeCacheTtlSpecified":  false,
+        "DirUmaskSpecified":  false,
+        "FileUmaskSpecified":  false,
+        "MaxConnectionsPerShareSpecified":  true,
+        "Acl":  null,
+        "AttributeCacheTtl":  null,
+        "CifsServer":  "PSLABTRUE-DR",
+        "Comment":  null,
+        "DirUmask":  null,
+        "FileUmask":  null,
+        "ForceGroupForCreate":  null,
+        "MaxConnectionsPerShare":  4294967295,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "OfflineFilesMode":  null,
+        "Path":  "/",
+        "ShareName":  "admin$",
+        "ShareProperties":  [
+                                "browsable"
+                            ],
+        "SymlinkProperties":  null,
+        "Volume":  "PSLAB_ROOT",
+        "VscanFileopProfile":  "standard",
+        "Vserver":  "PSLABDR"
+    },
+    {
+        "AttributeCacheTtlSpecified":  true,
+        "DirUmaskSpecified":  false,
+        "FileUmaskSpecified":  false,
+        "MaxConnectionsPerShareSpecified":  true,
+        "Acl":  [
+                    "Everyone / Full Control"
+                ],
+        "AttributeCacheTtl":  10,
+        "CifsServer":  "PSLABTRUE-DR",
+        "Comment":  null,
+        "DirUmask":  null,
+        "FileUmask":  null,
+        "ForceGroupForCreate":  null,
+        "MaxConnectionsPerShare":  4294967295,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "OfflineFilesMode":  "manual",
+        "Path":  "/vol_axa_default_001/axa_qtree_1",
+        "ShareName":  "axa_axa_qtree",
+        "ShareProperties":  [
+                                "browsable",
+                                "changenotify",
+                                "oplocks",
+                                "show_previous_versions"
+                            ],
+        "SymlinkProperties":  [
+                                  "symlinks"
+                              ],
+        "Volume":  "vol_axa_default_001",
+        "VscanFileopProfile":  "standard",
+        "Vserver":  "PSLABDR"
+    },
+    {
+        "AttributeCacheTtlSpecified":  true,
+        "DirUmaskSpecified":  true,
+        "FileUmaskSpecified":  true,
+        "MaxConnectionsPerShareSpecified":  true,
+        "Acl":  [
+                    "BUILTIN\\Administrators / Read"
+                ],
+        "AttributeCacheTtl":  10,
+        "CifsServer":  "PSLABTRUE-DR",
+        "Comment":  null,
+        "DirUmask":  0,
+        "FileUmask":  22,
+        "ForceGroupForCreate":  null,
+        "MaxConnectionsPerShare":  4294967295,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "OfflineFilesMode":  null,
+        "Path":  "/",
+        "ShareName":  "c$",
+        "ShareProperties":  [
+                                "oplocks",
+                                "browsable",
+                                "changenotify",
+                                "show_previous_versions"
+                            ],
+        "SymlinkProperties":  [
+                                  "symlinks"
+                              ],
+        "Volume":  "PSLAB_ROOT",
+        "VscanFileopProfile":  "standard",
+        "Vserver":  "PSLABDR"
+    },
+    {
+        "AttributeCacheTtlSpecified":  false,
+        "DirUmaskSpecified":  false,
+        "FileUmaskSpecified":  false,
+        "MaxConnectionsPerShareSpecified":  true,
+        "Acl":  null,
+        "AttributeCacheTtl":  null,
+        "CifsServer":  "PSLABTRUE-DR",
+        "Comment":  null,
+        "DirUmask":  null,
+        "FileUmask":  null,
+        "ForceGroupForCreate":  null,
+        "MaxConnectionsPerShare":  4294967295,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "OfflineFilesMode":  null,
+        "Path":  "/",
+        "ShareName":  "ipc$",
+        "ShareProperties":  [
+                                "browsable"
+                            ],
+        "SymlinkProperties":  null,
+        "Volume":  "PSLAB_ROOT",
+        "VscanFileopProfile":  "standard",
+        "Vserver":  "PSLABDR"
+    },
+    {
+        "AttributeCacheTtlSpecified":  true,
+        "DirUmaskSpecified":  false,
+        "FileUmaskSpecified":  false,
+        "MaxConnectionsPerShareSpecified":  true,
+        "Acl":  [
+                    "BUILTIN\\Administrators / No access",
+                    "Everyone / Full Control"
+                ],
+        "AttributeCacheTtl":  10,
+        "CifsServer":  "PSLABTRUE-DR",
+        "Comment":  null,
+        "DirUmask":  null,
+        "FileUmask":  null,
+        "ForceGroupForCreate":  null,
+        "MaxConnectionsPerShare":  4294967295,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "OfflineFilesMode":  "manual",
+        "Path":  "/",
+        "ShareName":  "NAS_ROOT_00$",
+        "ShareProperties":  [
+                                "browsable",
+                                "changenotify",
+                                "oplocks",
+                                "show_previous_versions"
+                            ],
+        "SymlinkProperties":  [
+                                  "symlinks"
+                              ],
+        "Volume":  "PSLAB_ROOT",
+        "VscanFileopProfile":  "standard",
+        "Vserver":  "PSLABDR"
+    },
+    {
+        "AttributeCacheTtlSpecified":  true,
+        "DirUmaskSpecified":  false,
+        "FileUmaskSpecified":  false,
+        "MaxConnectionsPerShareSpecified":  true,
+        "Acl":  [
+                    "demo / Full Control",
+                    "Everyone / Full Control"
+                ],
+        "AttributeCacheTtl":  10,
+        "CifsServer":  "PSLABTRUE-DR",
+        "Comment":  null,
+        "DirUmask":  null,
+        "FileUmask":  null,
+        "ForceGroupForCreate":  null,
+        "MaxConnectionsPerShare":  4294967295,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "OfflineFilesMode":  "manual",
+        "Path":  "/vol_axa_000/qtree_axa",
+        "ShareName":  "share_axa_qtree_axa_vol_axa_000",
+        "ShareProperties":  [
+                                "browsable",
+                                "changenotify",
+                                "oplocks",
+                                "show_previous_versions"
+                            ],
+        "SymlinkProperties":  [
+                                  "symlinks"
+                              ],
+        "Volume":  "vol_axa_000",
+        "VscanFileopProfile":  "standard",
+        "Vserver":  "PSLABDR"
+    },
+    {
+        "AttributeCacheTtlSpecified":  true,
+        "DirUmaskSpecified":  false,
+        "FileUmaskSpecified":  false,
+        "MaxConnectionsPerShareSpecified":  true,
+        "Acl":  [
+                    "demo / Full Control",
+                    "Everyone / Full Control"
+                ],
+        "AttributeCacheTtl":  10,
+        "CifsServer":  "PSLABTRUE-DR",
+        "Comment":  null,
+        "DirUmask":  null,
+        "FileUmask":  null,
+        "ForceGroupForCreate":  null,
+        "MaxConnectionsPerShare":  4294967295,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "OfflineFilesMode":  "manual",
+        "Path":  "/vol_axa_001/qtree_axa",
+        "ShareName":  "share_axa_qtree_axa_vol_axa_001",
+        "ShareProperties":  [
+                                "browsable",
+                                "changenotify",
+                                "oplocks",
+                                "show_previous_versions"
+                            ],
+        "SymlinkProperties":  [
+                                  "symlinks"
+                              ],
+        "Volume":  "vol_axa_001",
+        "VscanFileopProfile":  "standard",
+        "Vserver":  "PSLABDR"
+    },
+    {
+        "AttributeCacheTtlSpecified":  true,
+        "DirUmaskSpecified":  false,
+        "FileUmaskSpecified":  false,
+        "MaxConnectionsPerShareSpecified":  true,
+        "Acl":  [
+                    "demo / Full Control",
+                    "Everyone / Full Control"
+                ],
+        "AttributeCacheTtl":  10,
+        "CifsServer":  "PSLABTRUE-DR",
+        "Comment":  null,
+        "DirUmask":  null,
+        "FileUmask":  null,
+        "ForceGroupForCreate":  null,
+        "MaxConnectionsPerShare":  4294967295,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "OfflineFilesMode":  "manual",
+        "Path":  "/vol_axa_default_000/qtree_axa",
+        "ShareName":  "share_axa_qtree_axa_vol_axa_default_000",
+        "ShareProperties":  [
+                                "browsable",
+                                "changenotify",
+                                "oplocks",
+                                "show_previous_versions"
+                            ],
+        "SymlinkProperties":  [
+                                  "symlinks"
+                              ],
+        "Volume":  "vol_axa_default_000",
+        "VscanFileopProfile":  "standard",
+        "Vserver":  "PSLABDR"
+    },
+    {
+        "AttributeCacheTtlSpecified":  true,
+        "DirUmaskSpecified":  false,
+        "FileUmaskSpecified":  false,
+        "MaxConnectionsPerShareSpecified":  true,
+        "Acl":  [
+                    "demo / Full Control",
+                    "Everyone / Full Control"
+                ],
+        "AttributeCacheTtl":  10,
+        "CifsServer":  "PSLABTRUE-DR",
+        "Comment":  null,
+        "DirUmask":  null,
+        "FileUmask":  null,
+        "ForceGroupForCreate":  null,
+        "MaxConnectionsPerShare":  4294967295,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "OfflineFilesMode":  "manual",
+        "Path":  "/vol_axa_default_001/qtree_axa",
+        "ShareName":  "share_axa_qtree_axa_vol_axa_default_001",
+        "ShareProperties":  [
+                                "browsable",
+                                "changenotify",
+                                "oplocks",
+                                "show_previous_versions"
+                            ],
+        "SymlinkProperties":  [
+                                  "symlinks"
+                              ],
+        "Volume":  "vol_axa_default_001",
+        "VscanFileopProfile":  "standard",
+        "Vserver":  "PSLABDR"
+    },
+    {
+        "AttributeCacheTtlSpecified":  true,
+        "DirUmaskSpecified":  false,
+        "FileUmaskSpecified":  false,
+        "MaxConnectionsPerShareSpecified":  true,
+        "Acl":  [
+                    "PSLAB-DR\\omasson / Read",
+                    "PSLAB-DR\\tco / Change",
+                    "testomu / Change"
+                ],
+        "AttributeCacheTtl":  10,
+        "CifsServer":  "PSLABTRUE-DR",
+        "Comment":  null,
+        "DirUmask":  null,
+        "FileUmask":  null,
+        "ForceGroupForCreate":  null,
+        "MaxConnectionsPerShare":  5000,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "OfflineFilesMode":  "none",
+        "Path":  "/unix/qa/data/si",
+        "ShareName":  "testom",
+        "ShareProperties":  [
+                                "browsable",
+                                "changenotify",
+                                "oplocks",
+                                "show_previous_versions"
+                            ],
+        "SymlinkProperties":  [
+                                  "hide"
+                              ],
+        "Volume":  "si_data",
+        "VscanFileopProfile":  "strict",
+        "Vserver":  "PSLABDR"
+    },
+    {
+        "AttributeCacheTtlSpecified":  true,
+        "DirUmaskSpecified":  false,
+        "FileUmaskSpecified":  false,
+        "MaxConnectionsPerShareSpecified":  true,
+        "Acl":  [
+                    "Everyone / Full Control"
+                ],
+        "AttributeCacheTtl":  10,
+        "CifsServer":  "PSLABTRUE-DR",
+        "Comment":  null,
+        "DirUmask":  null,
+        "FileUmask":  null,
+        "ForceGroupForCreate":  null,
+        "MaxConnectionsPerShare":  4294967295,
+        "NcController":  {
+                             "ValidateIncoming":  false,
+                             "ValidateOutgoing":  false,
+                             "Trace":  false,
+                             "Vserver":  "PSLABDR",
+                             "Mode":  "Cluster",
+                             "MaxIterRecords":  100,
+                             "OntapiMajorVersion":  1,
+                             "OntapiMinorVersion":  160,
+                             "Version":  "NetApp Release 9.6P3: Sun Sep 22 08:26:36 UTC 2019",
+                             "ApplicationName":  "PowerShell Toolkit",
+                             "Protocol":  1,
+                             "Proxy":  null,
+                             "TimeoutMsec":  60000,
+                             "RetryCount":  0,
+                             "Name":  "cot2",
+                             "Address":  {
+                                             "Address":  514867466,
+                                             "AddressFamily":  2,
+                                             "ScopeId":  null,
+                                             "IsIPv6Multicast":  false,
+                                             "IsIPv6LinkLocal":  false,
+                                             "IsIPv6SiteLocal":  false,
+                                             "IsIPv6Teredo":  false,
+                                             "IsIPv4MappedToIPv6":  false
+                                         },
+                             "Port":  443,
+                             "Credentials":  {
+                                                 "SecurePassword":  {
+                                                                        "Length":  9
+                                                                    },
+                                                 "UserName":  "admin",
+                                                 "Password":  "",
+                                                 "Domain":  ""
+                                             }
+                         },
+        "OfflineFilesMode":  "manual",
+        "Path":  "/u1",
+        "ShareName":  "u1$",
+        "ShareProperties":  [
+                                "browsable",
+                                "changenotify",
+                                "oplocks",
+                                "show_previous_versions"
+                            ],
+        "SymlinkProperties":  [
+                                  "symlinks"
+                              ],
+        "Volume":  "u1",
+        "VscanFileopProfile":  "standard",
+        "Vserver":  "PSLABDR"
+    }
+]

@@ -480,6 +480,14 @@ function New-SvmDr {
         [ValidateSet("DP", "XDP")]
         [string]$SnapmirrorType="XDP",
 
+        # Define Network Identity preservation mode on Destination
+        # Default = True
+        #         so IP addresses and CIFS server identity will be preserved on destination,
+        #         so destination LIF will be created with APIPA addresses
+        #         If identity is not preserved, then you must provide different IP addresses and CIFS server identity on Destination SVM
+        [Parameter(Mandatory = $false)]
+        [bool]$PreserveIdentity=$True,
+
         # Enables Non-Interactive Mode
         # Is default enabled in Wfa-Integration Mode
         [switch]$NonInteractive,
@@ -983,6 +991,10 @@ function Invoke-SvmDrActivate {
         # Enables Non-Interactive Mode
         # Is default enabled in Wfa-Integration Mode
         [switch]$NonInteractive,
+
+        # Preserve or not Network Identity (IP addresses and CIFS server name) of Source on Destination
+        [Parameter(Mandatory = $false)]
+        [bool]$PreserveIdentity=$True,
 
         # Enables OnCommand Workflow Automation (WFA) Integration
         [switch]$WfaIntegration,
@@ -1788,6 +1800,10 @@ function Invoke-SvmDrMigrate {
         # Enables Non-Interactive Mode
         # Is default enabled in Wfa-Integration Mode
         [switch]$NonInteractive,
+
+        # Preserve or not Network Identity (IP addresses and CIFS server name) of Source on Destination
+        [Parameter(Mandatory = $false)]
+        [bool]$PreserveIdentity=$True,
 
         # Enables OnCommand Workflow Automation (WFA) Integration
         [switch]$WfaIntegration,

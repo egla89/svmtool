@@ -50,7 +50,12 @@
     Allow to connect controller with HTTP instead of HTTPS
 .PARAMETER ConfigureDR
     Allow to Create (or update) a SVM DR relationship
-    -Instance <instance name> -Vserver <vserver source name> -ConfigureDR [-SelectVolume]
+    -Instance <instance name> -Vserver <vserver source name> -ConfigureDR [-SelectVolume] -[PreserveIdentity <true|false>] [-RootAggr <aggr>] [-DataAggr <aggr>]
+
+    -SelectVolume : (switch parameter) Allows to select volume one by one before creating a DR volume
+    -PreserveIdentity : (bool parameter) Allows to set PreserverIdentity Mode. Default is True
+    -RootAggr : (string parameter) Defines destination aggr name where to store SVM root volume
+    -DataAggr : (string parameter) Defines destination aggr name where to store destination volumes 
 .PARAMETER ShowDR
     Allow to display all informations for a particular SVM DR relationship
     -Instance <instance name> -Vserver <vserver source name> -ShowDR [-Lag] [-schedule]
@@ -124,7 +129,7 @@
     -Instance <instance name> -Vserver <vserver source name> -ReCreateQuota
 .PARAMETER CorrectQuotaError
     Optional argument
-    Allow to Correct Source Quota Error before to save replicate the Quota rules configuration in SVMTOOL_DB
+    Allow to Correct Source Quota Error before to save the Quota rules configuration in SVMTOOL_DB
 	Used with ConfigureDR, UpdateDR and UpdateReverse
 .PARAMETER IgnoreQtreeExportPolicy
     Optional argument
@@ -264,8 +269,8 @@
 .PARAMETER ActiveDirectoryCustomOU
     When joining a DR Cifs vserver in AD, you can override the target OU with this parameter.     
 .PARAMETER NonInteractive
-    Runs the script in Non Interactive Mode.  
-    No confirmations and resource selection is automated
+    Runs the script in Non-Interactive Mode.  
+    No confirmations and resource selection are automated
     If no smart resource selection is possible, the RootAggr and DataAggr parameters are used as a fallback
 .PARAMETER WfaIntegration
     Will convert all logging to WFA Logging
@@ -279,6 +284,13 @@
     This is only possible if Clone and Production will run is two completely isolated IPspace or Site with network isolation
     Will automatially set Production IP address on Cloned LIF
     Will automaticaly set Production CIFS server name on Cloned CIFS server
+.PARAMETER PreserveIdentity
+    Used with ConfigureDR to preserve source Identity (IP addresses and CIFS server name) on destination SVM.
+    In this case, all destinations LIF will be created with APIPA addresses.
+    A temporary LIF will be mandatory if a CIFS server must be registered in destination SVM.
+    In case of Activation, IP addresses and CIFS server from source will be replicated on destination.
+    Default is PreserverIdentity = True
+    If PreserveIdentity = False, then you must provide IP addresses and CIFS identity on destination SVM
 .INPUTS
     None. You cannot pipe objects to this script
 .OUTPUTS
@@ -300,6 +312,19 @@
     Configure a SVM DR relationship for SVM svm_source in the instance test
     Request user to select which volume will be replicated and which not
     Ask for each volume on which destination aggregate it will be provisionned
+.EXAMPLE
+    svmtool.ps1 -Instance test -Vserver svm_source -ConfigureDR -RootAggr data -DataAggr data2 -PreserveIdentiy $True -DefaultLocalUserCredentials $cred 
+    -DefaultLDAPCredentials $cred -NonInteractive -TemporarySecondaryCifsIp 102.11.12.219 -SecondaryCifsLifMaster lif_data1
+
+    Configure a SVM DR relationship for SVM svm_source in the instance test
+
+    Will works Non Interactively, without prompting user, for this we provide:
+    - a default password through $cred
+    - a default Data Aggr and Root Aggr
+
+    We will preserve identity on destination, so we must provide a temporary CIFS IP to register our CIFS server on destination:
+    - Destination temporary IP address will be 102.11.12.219
+    - We will clone the configuration of source LIF named lif_data1, to create our temporary LIF on destination
 .EXAMPLE
    svmtool.ps1 -Instance test -Vserver svm_source -UpdateDR
    
@@ -407,7 +432,7 @@
 .NOTES
     Author  : Olivier Masson
     Author  : Mirko Van Colen
-    Version : July 7th, 2019
+    Version : November 11th, 2019
     Version History : 
         - 0.0.3 : 	Initial version 
         - 0.0.4 : 	Bugfix, typos and added ParameterSets
@@ -453,6 +478,7 @@
         - 0.2.8 :   Fix import-module svmtool
         - 0.2.9 :   Add snapmirror type option
         - 0.3.0 :   Modify NonInteractive mode for ConfigureDR and for CloneDR with ForceOriginalClone
+        - 0.3.1 :   Add PreserveIdentity Mode
 #>
 [CmdletBinding(HelpURI = "https://github.com/oliviermasson/svmtool", DefaultParameterSetName = "ListInstance")]
 Param (
@@ -537,12 +563,12 @@ Param (
     [Parameter(Mandatory = $true, ParameterSetName = 'MirrorScheduleReverse')]
     [string]$MirrorScheduleReverse,
 
+    [Parameter(Mandatory = $true, ParameterSetName = 'Migrate')]
+    [switch]$Migrate,
+
     [Parameter(Mandatory = $false, ParameterSetName = 'Migrate')]
     [Parameter(Mandatory = $true, ParameterSetName = 'DeleteSource')]
     [switch]$DeleteSource,
-
-    [Parameter(Mandatory = $true, ParameterSetName = 'Migrate')]
-    [switch]$Migrate,
 
     [Parameter(Mandatory = $true, ParameterSetName = 'CreateQuotaDR')]
     [switch]$CreateQuotaDR,
@@ -906,6 +932,11 @@ Param (
     [Parameter(Mandatory = $false, ParameterSetName = 'SplitCloneDR')]
     [Parameter(Mandatory = $false, ParameterSetName = 'DeleteCloneDR')]	
     [switch]$NonInteractive,
+    
+    [Parameter(Mandatory = $False, ParameterSetName = 'ConfigureDR')]
+    [Parameter(Mandatory = $False, ParameterSetName = 'ActivateDR')]
+    [Parameter(Mandatory = $False, ParameterSetName = 'Migrate')]
+    [bool]$PreserveIdentity=$True,
 
     [switch]$WfaIntegration,
 
@@ -915,6 +946,7 @@ Param (
     [Parameter(Mandatory = $false, ParameterSetName = 'Migrate')]
     [Parameter(Mandatory = $false, ParameterSetName = 'CloneDR')]
     [Parameter(Mandatory = $false, ParameterSetName = 'Restore')]
+    [Parameter(Mandatory = $false, ParameterSetName = 'ReActivate')]
     [Parameter(Mandatory = $false, ParameterSetName = 'RestoreObject')]
     [pscredential]$DefaultLocalUserCredentials = $null,
 
@@ -925,7 +957,8 @@ Param (
 	
     [Parameter(Mandatory = $false, ParameterSetName = 'ConfigureDR')]
     [Parameter(Mandatory = $false, ParameterSetName = 'CloneDR')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'Restore')]    
+    [Parameter(Mandatory = $false, ParameterSetName = 'Restore')] 
+    [Parameter(Mandatory = $false, ParameterSetName = 'Migrate')]   
     [pscredential]$DefaultLDAPCredentials = $null,
 
     [Parameter(Mandatory = $false, ParameterSetName = 'ConfigureDR')]
@@ -955,8 +988,8 @@ $Global:MIN_MINOR = 5
 $Global:MIN_BUILD = 0
 $Global:MIN_REVISION = 0
 #############################################################################################
-$Global:RELEASE = "0.3.0"
-$Global:SCRIPT_RELEASE = "0.1.14"
+$Global:RELEASE = "0.3.1"
+$Global:SCRIPT_RELEASE = "0.1.15"
 $Global:BASEDIR = 'C:\Scripts\SVMTOOL'
 $Global:SVMTOOL_DB_DEFAULT = $Global:BASEDIR
 $Global:CONFBASEDIR = $BASEDIR + '\etc\'
@@ -988,6 +1021,7 @@ $Global:ForceClean = $ForceClean
 $Global:SkipVscanFpolicy = $SkipVscanFpolicy
 $Global:ForceCloneOriginal = $ForceCloneOriginal
 $Global:BACKUPALLSVM = $False
+$Global:PreserveIdentity=$PreserveIdentity
 $Global:NumberOfLogicalProcessor = (Get-WmiObject Win32_Processor).NumberOfLogicalProcessors
 if ($Global:NumberOfLogicalProcessor -lt 4) {
     $Global:NumberOfLogicalProcessor = 4
@@ -2099,6 +2133,16 @@ if ( $ConfigureDR ) {
         Write-LogError "ERROR: Unable to Connect to NcController [$PRIMARY_CLUSTER]" 
         clean_and_exit 1
     }
+    # Analyse argument
+    $CIFSsource=Get-NcCifsServer -VserverContext $Vserver -Controller $NcPrimaryCtrl -ErrorVariable ErrorVar
+    if($null -ne $CIFSsource){
+        Write-LogDebug "CIFS server exist on Source SVM"
+        if( ($Global:PreserveIdentity -eq $True) -and ($TemporarySecondaryCifsIp.Length -eq 0) ){
+            Write-LogWarn "With PreserveIdentity = True, you must provide information to create a Temporary LIF on destination capable to register CIFS server"
+            Write-LogWarn "use TemporarySecondaryCifsIp and SecondaryCifsLifMaster parameter to define this Temporay LIF on destination"
+            clean_and_exit 1
+        }
+    }
     $myCred = get_local_cDotcred ($SECONDARY_CLUSTER) 
     Write-LogDebug "connect_cluster -myController $SECONDARY_CLUSTER -myCred $MyCred -myTimeout $Timeout"
     if ( ( $NcSecondaryCtrl = connect_cluster -myController $SECONDARY_CLUSTER -myCred $MyCred -myTimeout $Timeout ) -eq $False ) {
@@ -2295,15 +2339,15 @@ if ($Migrate) {
         # 	Write-LogError "ERROR: restamp_msid failed"
         # 	clean_and_exit 1
         # }
-        $ASK_MIGRATE = Read-HostOptions -question "IP and Services will switch now for [$Vserver]. Ready to go ?" -options "y/n" -default "y"
+        $ASK_MIGRATE = Read-HostOptions -question "[$Vserver] IP and Services will switch now. Ready to go ?" -options "y/n" -default "y"
 
         if ($ASK_MIGRATE -eq 'y') {
-            if ( ( $ret = migrate_lif -myPrimaryController $NcPrimaryCtrl -mySecondaryController $NcSecondaryCtrl -myPrimaryVserver $Vserver -mySecondaryVserver $VserverDR) -ne $True ) {
+            if ( ( $ret = migrate_lif -myPrimaryController $NcPrimaryCtrl -mySecondaryController $NcSecondaryCtrl -myPrimaryVserver $Vserver -mySecondaryVserver $VserverDR -PreserveIdentity $Global:PreserveIdentity) -ne $True ) {
                 Write-LogError "ERROR: migrate_lif failed"
                 clean_and_exit 1
             }
 
-            if ( ( $ret = migrate_cifs_server -myPrimaryController $NcPrimaryCtrl -mySecondaryController $NcSecondaryCtrl -myPrimaryVserver $Vserver -mySecondaryVserver $VserverDR -NoInteractive) -ne $True ) {
+            if ( ( $ret = migrate_cifs_server -myPrimaryController $NcPrimaryCtrl -mySecondaryController $NcSecondaryCtrl -myPrimaryVserver $Vserver -mySecondaryVserver $VserverDR -NoInteractive -PreserveIdentity $Global:PreserveIdentity) -ne $True ) {
                 Write-LogError "ERROR: migrate_cifs_server failed"
                 clean_and_exit 1
             }
@@ -2321,7 +2365,7 @@ if ($Migrate) {
             if ( $? -ne $True ) {
                 $Return = $False ; throw "ERROR: Get-NcNfsService failed [$ErrorVar]" 
             }
-            if ( $NfsService -eq $null ) {
+            if ( $null -eq $NfsService ) {
                 Write-Log "[$VserverDR] No NFS services in vserver"
             }
             else {
@@ -2348,7 +2392,7 @@ if ($Migrate) {
             if ( $? -ne $True ) {
                 $Return = $False ; throw "ERROR: Get-NcIscsiService failed [$ErrorVar]" 
             }
-            if ( $IscsiService -eq $null ) {
+            if ( $null -eq $IscsiService ) {
                 Write-Log "[$VserverDR] No iSCSI services in Vserver"
             }
             else {
@@ -2363,7 +2407,11 @@ if ($Migrate) {
                 }
             }
             Write-Log "[$Vserver] has been migrated on destination cluster [$SecondaryClusterName]"
-            Write-Log "[$Vserver] Users can now connect on destination"
+            if($Global:PreserveIdentity -eq $True){
+                Write-Log "[$Vserver] Users can now connect on destination with source Identity (IP and CIFS server name)"
+            }else{
+                Write-Log "[$Vserver] Users can now connect on destination with destination Identity"
+            }
             if ( ( $ret = set_vol_options_from_voldb -myController $NcSecondaryCtrl -myVserver $VserverDR -NoCheck) -ne $True ) {
                 Write-LogError "ERROR: set_vol_options_from_voldb failed"
             }
@@ -2381,7 +2429,7 @@ if ($Migrate) {
             else {
                 "n"
             }
-            $ASK_WAIT2 = Read-HostOptions -question "Do you want to delete Vserver [$Vserver] on source cluster [$PrimaryClusterName] ?" -options "y/n" -default $defaultanswer
+            $ASK_WAIT2 = Read-HostOptions -question "[$Vserver] Do you want to delete SVM on source cluster [$PrimaryClusterName] ?" -options "y/n" -default $defaultanswer
             if ($ASK_WAIT2 -eq 'y') {
 
                 if ( ( $ret = remove_snapmirror_dr -myPrimaryController $NcPrimaryCtrl -mySecondaryController $NcSecondaryCtrl -myPrimaryVserver $Vserver -mySecondaryVserver $VserverDR) -ne $True ) {
@@ -2411,8 +2459,8 @@ if ($Migrate) {
                 clean_and_exit 0
             }
             else {
-                Write-Log "User chose not to delete source Vserver [$Vserver] on Source Cluster [$PrimaryClusterName]"
-                Write-Log "Vserver [$Vserver] will only be stopped on [$PrimaryClusterName]"
+                Write-Log "[$Vserver] User chose not to delete source SVM on Source Cluster [$PrimaryClusterName]"
+                Write-Log "[$Vserver] will only be stopped on [$PrimaryClusterName]"
                 Write-Log "In this case the SVM object name on Destination Cluster [$SecondaryClusterName] is still [$VserverDR]"
                 Write-Log "But CIFS identity is correctly migrated to [$Vserver]"
                 Write-Log "Final rename will be done when [-DeleteSource] step will be executed, once you are ready to completely delete [$Vserver] on Source Cluster [$PrimaryClusterName]"
@@ -2672,12 +2720,12 @@ if ( $DeleteCloneDR ) {
     if ($CloneName.length -gt 1) {
         $CloneVserverList = $CloneName	
     }
-    elseif ( ( $CloneVserverList = get_vserver_clone -DestinationVserver $VserverDR -mySecondaryController $NcSecondaryCtrl) -eq $null ) {
+    elseif ( $null -eq ( $CloneVserverList = get_vserver_clone -DestinationVserver $VserverDR -mySecondaryController $NcSecondaryCtrl) ) {
         Write-Log "No Vserver Clone from [$VserverDR] found on Cluster [$SECONDARY_CLUSTER]" 
         clean_and_exit 0
     }
     foreach ($CloneVserver in $CloneVserverList) {
-        $ANS = Read-HostOptions "Are you sure you want to delete Vserver Clone [$CloneVserver] from [$SECONDARY_CLUSTER] ?" "y/n" -default "y"
+        $ANS = Read-HostOptions "[$SECONDARY_CLUSTER] Are you sure you want to delete Vserver Clone [$CloneVserver] ?" "y/n" -default "y"
         if ( $ANS -eq 'y' ) {
             if ( ( $ret = remove_vserver_clone_dr -mySecondaryController $NcSecondaryCtrl -mySecondaryVserver $CloneVserver ) -eq $False ) {
                 Write-LogError "ERROR: remove_vserver_dr: Unable to remove Vserver [$VserverDR]" 
@@ -2765,7 +2813,7 @@ if ( $ReActivate ) {
             Return=$False; Write-Error "Failed to start Vserver [$Vserver] reason [$ErrorVar]"
         }
     }
-    if ( $XDPPolicy -ne "" -and $XDPPolicy -ne "MirrorAllSnapshots" ) {
+    if ( ( $XDPPolicy -ne "" ) -and ( $XDPPolicy -ne "MirrorAllSnapshots" ) ) {
         $ret = Get-NcSnapmirrorPolicy -Name $XDPPolicy -Controller $NcSecondaryCtrl -ErrorVariable ErrorVar
         if ( $? -ne $True -or $ret.count -eq 0 ) {
             Write-LogDebug "XDPPolicy [$XDPPolicy] does not exist on [$SECONDARY_CLUSTER]. Will not change XDPPolicy"
@@ -2776,7 +2824,7 @@ if ( $ReActivate ) {
     # stop secondary cifs server
     # remove secondary cifs server
     $NeedCIFS = $False
-    if ( (Get-NcCifsServer -VserverContext $VserverDR -Controller $NcSecondaryCtrl -ErrorVariable ErrorVar) -ne $null ) {
+    if ( $null -ne (Get-NcCifsServer -VserverContext $VserverDR -Controller $NcSecondaryCtrl -ErrorVariable ErrorVar) ) {
         <# Write-Log "[$VserverDR] Remove CIFS server"
 		Write-LogDebug "Stop-NcCifsServer -VserverContext $VserverDR -Controller $NcSecondaryCtrl"
 		$ret=Stop-NcCifsServer -VserverContext $VserverDR -Controller $NcSecondaryCtrl -ErrorVariable ErrorVar -Confirm:$False
@@ -2787,11 +2835,6 @@ if ( $ReActivate ) {
         $NeedCIFS = $True	
     }
     Write-LogDebug "NeedCIFS = $NeedCIFS"
-    # restore all secondary LIF address with info previously backed
-    Write-Log "[$VserverDR] Restore LIF with DR configuration"
-    if ( ($ret = Set_LIF_from_JSON -ToNcController $NcSecondaryCtrl -ToVserver $VserverDR) -eq $False ) {
-        Throw "ERROR: Failed to set IP address on [$VserverDR]"	
-    }
     # register secondary cifs with temporary info previously backed
     if ($NeedCIFS) {
         #add new secondary cifs with primary identity
@@ -2799,6 +2842,11 @@ if ( $ReActivate ) {
         if ( ($ret = Set_CIFS_from_JSON -ToNcController $NcSecondaryCtrl -ToVserver $VserverDR) -eq $False ) {
             Throw "ERROR: Failed to add new CIFS server on [$VserverDR]"
         }
+    }
+    # restore all secondary LIF address with info previously backed
+    Write-Log "[$VserverDR] Restore LIF with DR configuration"
+    if ( ($ret = Set_LIF_from_JSON -ToNcController $NcSecondaryCtrl -ToVserver $VserverDR) -eq $False ) {
+        Throw "ERROR: Failed to set IP address on [$VserverDR]"	
     }
     Write-Log "[$VserverDR] Disable services"
     if ( ($ret = disable_network_protocol_vserver_dr -myController $NcSecondaryCtrl -myVserver $VserverDR -ForceDisable) -eq $False) {
@@ -2809,7 +2857,7 @@ if ( $ReActivate ) {
     if ( ($ret = Set_LIF_from_JSON -ToNcController $NcPrimaryCtrl -ToVserver $Vserver -fromSrc) -eq $False ) {
         Throw "ERROR: Failed to set IP address on [$Vserver]"	
     }
-    # register primary cifs server wit info previously backed
+    # register primary cifs server with info previously backed
     if ($NeedCIFS) {
         #add primary cifs with primary identity
         Write-Log "[$Vserver] Restore CIFS server with Primary configuration"
