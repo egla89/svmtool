@@ -12,7 +12,7 @@ It also require at least .Net Framework v3.5 and Windows Powershell at least v3.
 
 Mains objectives of this script are:
 - Create/Maintain/Manage SVM Disaster Relationship between NetApp MetroCluster for old version of **ONTAP** 8.3 to 9.X
-- Migrate SVM with old **ONTAP** version (SVM Migrate is officially supported with **ONTAP** since 9.4)
+- Migrate SVM between Cluster or MetroCluster
 - Backup and Restore all configuration (volumes, lif, cron, junction-path, etc...) to original or alternate cluster
 - Clone DR SVM which allows to test your DR SVM through a cloned version of it, without interrupting SnapMirror relationships during the test timeframe
 
